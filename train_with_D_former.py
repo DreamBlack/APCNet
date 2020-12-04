@@ -24,6 +24,7 @@ parser.add_argument('--weight_decay', type=float, default=0.001)
 parser.add_argument('--learning_rate', default=0.0002, type=float, help='learning rate in training')
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
+parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
 parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=0, help='0 not use D-net,1 use D-net')
@@ -78,7 +79,7 @@ Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45
 Weight3_dims = (512 + 128, 1024, 1024, 256)
 knn = 48
 sigma = 0.008
-myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder)
+myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
 myNetD=myDiscriminator(256,MLP_dimsD,FC_dimsD)
 
 print("Let's use", torch.cuda.device_count(), "GPUs!")
