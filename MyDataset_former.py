@@ -44,6 +44,7 @@ class MyDataset(data.Dataset):
         with open(os.path.join(self.root, 'train_test_split', 'shuffled_test_file_list.json'), 'r') as f:
             test_ids = set([str(d.split('/')[2]) for d in json.load(f)])
 
+
         for item in self.cat:  # item is name eg. lamp
             self.meta[item] = []
 
@@ -66,12 +67,31 @@ class MyDataset(data.Dataset):
                 print('Unknown split: %s. Exiting..' % (split))
                 sys.exit(-1)
 
+            # table 数据集太大了，选其中几个就好了
+            if class_choice == 'Table':
+                if split == 'train':
+                    fns = fns[:2658]
+                elif split == 'val':
+                    fns = fns[:396]
+                elif split == 'test':
+                    fns = fns[:704]
+                else:
+                    print('Unknown split: %s. Exiting..' % (split))
+
             print(split+"_size %d"%(len(fns)))  # 1118*5*8=44720
             for fn in fns:  # 点云路径，图片路径，类别名，objid
                 token = (os.path.splitext(os.path.basename(fn))[0])  # basename返回最后的文件名，token获得的是前缀文件名，也就是objid
                 image_view = ['00', '09', '11', '18', '22']
+
+                good_center=[]
+                if class_choice == 'Table':
+                    image_view = ['00', '09', '18']
+
                 if three:
-                    good_center=[0,1,2,6,7]
+                    if class_choice=='Lamp':
+                        good_center=[0,1,2,6,7]
+                    else:
+                        good_center = [0, 1, 2, 3, 4]
                     for center in good_center:
                         for view in image_view:
                             self.meta[item].append(
@@ -164,8 +184,8 @@ class MyDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    dset = MyDataset( classification=True,three=False,
-                       class_choice='Lamp', split='train')
+    dset = MyDataset( classification=True,three=True,
+                       class_choice='Table', split='test')
     #    d = PartDataset( root='./dataset/shapenetcore_partanno_segmentation_benchmark_v0/',classification=False, class_choice=None, npoints=4096, split='test')
     print(len(dset))
     incomplete,gt, image, filename= dset[1000]
@@ -175,4 +195,4 @@ if __name__ == '__main__':
     print(image.size())
 #    print(incomplete)
 #    ps = ps.numpy()
-    np.savetxt('ps'+'.xyz', incomplete, fmt = "%f %f %f")
+    #np.savetxt('ps'+'.xyz', incomplete, fmt = "%f %f %f")

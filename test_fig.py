@@ -46,6 +46,21 @@ random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 torch.cuda.manual_seed_all(opt.manualSeed)
 
+def draw_point_cloud(incomplete,rec_missing, elev=0,azim=0,output_filename=None):
+    """ points is a Nx3 numpy array """
+    fig = plt.figure(figsize=(24, 12), facecolor='w')  #
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.9)
+
+
+    ax0 = fig.add_subplot(111, projection='3d')
+    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
+    ax0.scatter(rec_missing[:, 0], rec_missing[:, 1], rec_missing[:, 2], color='r')
+    ax0.set_axis_off()
+    plt.title("GT")
+
+
+    plt.show()
+
 #画出3d点云,image+gt+result
 def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_filename=None):
     """ points is a Nx3 numpy array """
@@ -139,34 +154,49 @@ assert test_dset
 # good:10749,2269,5320
 # bad:9958,9960,4305
 if __name__ == '__main__':
-    missings=[]
-    incomplete, gt, image,filename = test_dset.__getitem__(opt.index)
-    missings.append(gt)
-    my_image=np.transpose(image, (1, 2, 0))
+    dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate/Three/04379243'
+    filename1='/0gt103ad97126bc54f4fc5e9e325e1bd5b8.pts'
+    filename2 = '/0incomplete103ad97126bc54f4fc5e9e325e1bd5b8.pts'
+    # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
+    complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
+    gt=np.loadtxt(dir_path+filename1)
+    incomplete = np.loadtxt(dir_path + filename2)
+    draw_point_cloud(gt,incomplete)
+    no=False
+    if no:
+        missings = []
+        incomplete, gt, image, filename = test_dset.__getitem__(opt.index)
+        missings.append(gt)
+        my_image = np.transpose(image, (1, 2, 0))
 
-    incomplete = torch.unsqueeze(incomplete, 0)
-    image = torch.unsqueeze(image, 0)
+        incomplete = torch.unsqueeze(incomplete, 0)
+        image = torch.unsqueeze(image, 0)
 
-    incomplete = incomplete.to(device)
-    image = image.to(device)
+        incomplete = incomplete.to(device)
+        image = image.to(device)
 
-    incomplete = Variable(incomplete, requires_grad=False)
-    image = Variable(image.float(), requires_grad=False)
+        incomplete = Variable(incomplete, requires_grad=False)
+        image = Variable(image.float(), requires_grad=False)
 
-    for i in range(1):
-        net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
+        for i in range(1):
+            net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,
+                        Weight3_dims, folding=opt.folding_decoder, attention=opt.attention_encoder)
 
-        net = torch.nn.DataParallel(net)
-        net.to(device)
-        net.load_state_dict(torch.load(path_Nets[i], map_location=lambda storage, location: storage)['state_dict'])
-        net.eval()
-        fake = net(incomplete, image)
-        missings.append(fake.cuda().data.cpu().squeeze(0).numpy())
+            net = torch.nn.DataParallel(net)
+            net.to(device)
+            net.load_state_dict(torch.load(path_Nets[i], map_location=lambda storage, location: storage)['state_dict'])
+            net.eval()
+            fake = net(incomplete, image)
+            missings.append(fake.cuda().data.cpu().squeeze(0).numpy())
 
-    print(len(missings))
-    print(incomplete.cuda().data.squeeze(0).shape)
+        print(len(missings))
+        print(incomplete.cuda().data.squeeze(0).shape)
 
-    # 显示单个结果
-    pyplot_draw_point_cloud(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
-    # 构建incomplete和missings数组
-    # pyplot_for_one_object(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
+        # 显示单个结果
+        # pyplot_draw_point_cloud(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
+        pyplot_draw_point_cloud(my_image, incomplete.cuda().data.squeeze(0).cpu().numpy(), missings)
+
+        # 构建incomplete和missings数组
+        # pyplot_for_one_object(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
