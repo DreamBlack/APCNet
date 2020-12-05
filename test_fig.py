@@ -9,20 +9,24 @@ from MyDataset_former import MyDataset
 from completion_net import myNet
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--manualSeed', type=int,default=1, help='manual seed')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
-parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
+parser.add_argument('--class_choice', default='Car', help="which class choose to train")
+parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--netG', help="path to netG (to load as model)")
+parser.add_argument('--index', type=int,default=400, help='which obj to show')
 opt = parser.parse_args()
 
 # path_Nets=['/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/Checkpoint (复件)/point_netG150.pth',
 #            '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/withDCkPath/Trained_Model/point_netG50.pth',
 #            '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/noDCkPath/Checkpoint/point_netG120.pth',
 #            '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/withDCkPath/WITHDAR/Trained_Model/point_netG130.pth']
-
-path_Nets=['/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/fc_decoder_withG_exp/checkpoint/Trained_Model/point_netG100.pth']
+#path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/fc_decoder_withG_exp/checkpoint/Trained_Model/point_netG100.pth'
+path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/folding_rep_attention/02958343/checkpoint/point_netG150.pth'
+path_Nets=[opt.netG]
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True # promote
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
@@ -65,7 +69,12 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_f
     plt.title("Vanilla")
 
     plt.show()
-
+    # for angle in range(0, 360):
+    #     ax0.view_init(30, angle)
+    #     ax1.view_init(30, angle)
+    #     plt.draw()
+    #     plt.pause(.001)
+    # savefig(output_filename)
 def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filename=None):
     '''
     对于每个物体，再一行中画出6个关于该物体的结果，从左到右分别是image，gt(in+mi),vanilla,gan,rep,full
@@ -124,15 +133,14 @@ def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filena
     #     plt.draw()
     #     plt.pause(.001)
     # savefig(output_filename)
-test_dset = MyDataset(classification=True,three=False,
-                 class_choice='Lamp', split='test')
+test_dset = MyDataset(classification=True,three=opt.folding_decoder,
+                 class_choice=opt.class_choice, split='test')
 assert test_dset
-index=872
 # good:10749,2269,5320
 # bad:9958,9960,4305
 if __name__ == '__main__':
     missings=[]
-    incomplete, gt, image = test_dset.__getitem__(index)
+    incomplete, gt, image,filename = test_dset.__getitem__(opt.index)
     missings.append(gt)
     my_image=np.transpose(image, (1, 2, 0))
 
@@ -146,7 +154,7 @@ if __name__ == '__main__':
     image = Variable(image.float(), requires_grad=False)
 
     for i in range(1):
-        net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,Weight3_dims,folding=False)
+        net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
 
         net = torch.nn.DataParallel(net)
         net.to(device)

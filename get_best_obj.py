@@ -13,32 +13,23 @@ from mpl_toolkits.mplot3d import Axes3D
 from myutils import PointLoss_test
 import heapq
 import os
-
+'''
+本文件传入类别，网络模型文件目录，要保存的地址
+会将测试集中结果最好的30个写进去
+'''
 parser = argparse.ArgumentParser()  # create an argumentparser object
-
 parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
 parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
 parser.add_argument('--class_choice', default='Car', help="which class choose to train")
-parser.add_argument('--niter', type=int, default=201, help='number of epochs to train for')
 parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
-parser.add_argument('--weight_decay', type=float, default=0.001)
-parser.add_argument('--learning_rate', default=0.0002, type=float, help='learning rate in training')
-parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
+parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
-parser.add_argument('--D_choose',type=int, default=1, help='0 not use D-net,1 use D-net')
-parser.add_argument('--netG', default='', help="path to netG (to continue training)")
-parser.add_argument('--netD', default='', help="path to netD (to continue training)")
+parser.add_argument('--netG', help="path to netG (to load as model)")
+parser.add_argument('--result_path', help="path to netG (to load as model)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--drop',type=float,default=0.2)
-parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
-parser.add_argument('--point_scales_list',type=list,default=[2048,1024,512],help='number of points in each scales')
-parser.add_argument('--each_scales_size',type=int,default=1,help='each scales size')
-parser.add_argument('--wtl2',type=float,default=0.95,help='weight for loss 0 means do not use else use with this weight')
 opt = parser.parse_args()
 print(opt)
-
-netpath='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343/checkpoint/Trained_Model/point_netG200.pth'
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True # promote
@@ -53,10 +44,10 @@ Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45
 Weight3_dims = (512 + 128, 1024, 1024, 256)
 knn = 48
 sigma = 0.008
-mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder)
+mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
 mynet = torch.nn.DataParallel(mynet)
 mynet.to(device)
-mynet.load_state_dict(torch.load(netpath, map_location=lambda storage, location: storage)['state_dict'])
+mynet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
 mynet.eval()
 
 if opt.manualSeed is None:
@@ -84,8 +75,8 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev,azim,output_filen
 
 if __name__ == '__main__':
     listG,listB,listG=[],[],[]
-    fGood = open('now_index_of_good_test.txt', 'a')
-    fBad = open('now_index_of_bad_test.txt', 'a')
+    # fGood = open('index_of_good_test.txt', 'a')
+    # fBad = open('index_of_bad_test.txt', 'a')
 
     bests_overall_pregt = []  # 这个元素是元组，(cd,index)
     bests_overall_gtpre = []  # 这个元素是元组，(cd,index)
@@ -147,7 +138,6 @@ if __name__ == '__main__':
             heapq.heapify(bests_missing_cd)
             heapq.heapify(bests_all_cd)
             have_heaped = True
-            print("once is ok")
         else:
             # 堆中元素的个数达到要求后，进行push
             heapq.heappushpop(bests_missing_pregt, (dist2, filename,i))
@@ -184,27 +174,26 @@ if __name__ == '__main__':
     # pyplot_draw_point_cloud(listI[0], listR[0], listG[0], 0, 0)
     # plt.show()
     # 写入文件
-    root_path = '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343'
-    f0 = open(os.path.join(root_path, opt.class_choice, '_bests_overall_pregt_test_result.txt'), 'a')
-    f1 = open(os.path.join(root_path, opt.class_choice, '_bests_overall_gtpre_test_result.txt'), 'a')
-    f2 = open(os.path.join(root_path, opt.class_choice, '_bests_missing_pregt_test_result.txt'), 'a')
-    f3 = open(os.path.join(root_path, opt.class_choice, '_bests_missing_gtpre_test_result.txt'), 'a')
-    f4 = open(os.path.join(root_path, opt.class_choice, '_bests_missing_cd_test_result.txt'), 'a')
-    f5 = open(os.path.join(root_path, opt.class_choice, '_bests_all_cd_test_result.txt'), 'a')
+    f0 = open(os.path.join(opt.result_path,   '_bests_overall_pregt_test_result.txt'), 'a')
+    f1 = open(os.path.join(opt.result_path,   '_bests_overall_gtpre_test_result.txt'), 'a')
+    f2 = open(os.path.join(opt.result_path,   '_bests_missing_pregt_test_result.txt'), 'a')
+    f3 = open(os.path.join(opt.result_path,   '_bests_missing_gtpre_test_result.txt'), 'a')
+    f4 = open(os.path.join(opt.result_path,   '_bests_missing_cd_test_result.txt'), 'a')
+    f5 = open(os.path.join(opt.result_path,   '_bests_all_cd_test_result.txt'), 'a')
     print("开始将最好的结果写入文件")
     for i in range(bests_num):
         f0.write('\n' + 'bests_overall_pregt: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_overall_pregt[i][0]), bests_overall_pregt[i][1],i))
+                 % (float(bests_overall_pregt[i][0]), bests_overall_pregt[i][1],bests_overall_pregt[i][2]))
         f1.write('\n' + '_bests_overall_gtpre: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_overall_gtpre[i][0]), bests_overall_gtpre[i][1],i))
+                 % (float(bests_overall_gtpre[i][0]), bests_overall_gtpre[i][1],bests_overall_gtpre[i][2]))
         f2.write('\n' + '_bests_missing_pregt: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_missing_pregt[i][0]), bests_missing_pregt[i][1],i))
+                 % (float(bests_missing_pregt[i][0]), bests_missing_pregt[i][1],bests_missing_pregt[i][2]))
         f3.write('\n' + '_bests_missing_gtpre: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_missing_gtpre[i][0]), bests_missing_gtpre[i][1],i))
+                 % (float(bests_missing_gtpre[i][0]), bests_missing_gtpre[i][1],bests_missing_gtpre[i][2]))
         f4.write('\n' + '_bests_missing_cd: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_missing_cd[i][0]), bests_missing_cd[i][1],i))
+                 % (float(bests_missing_cd[i][0]), bests_missing_cd[i][1],bests_missing_cd[i][2]))
         f5.write('\n' + '_bests_all_cd: %.4f Obj_id: %s, Obj_index: %d'
-                 % (float(bests_all_cd[i][0]), bests_all_cd[i][1],i))
+                 % (float(bests_all_cd[i][0]), bests_all_cd[i][1],bests_all_cd[i][2]))
     f0.close()
     f1.close()
     f2.close()
