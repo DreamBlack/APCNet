@@ -41,7 +41,8 @@ parser.add_argument('--drop',type=float,default=0.2)
 parser.add_argument('--alpha',type=float,default=0.5, help='rep loss weight')
 parser.add_argument('--radius',type=float,default=0.07, help='radius of knn')
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
-parser.add_argument('--step_size',type=int,default=60,help='LR step size')
+parser.add_argument('--step_size',type=int,default=40,help='LR step size')
+parser.add_argument('--gamma',type=float,default=0.2,help='LR gamma')
 parser.add_argument('--point_scales_list',type=list,default=[2048,1024,512],help='number of points in each scales')
 parser.add_argument('--each_scales_size',type=int,default=1,help='each scales size')
 parser.add_argument('--wtl2',type=float,default=0.95,help='weight for loss 0 means do not use else use with this weight')
@@ -50,7 +51,7 @@ print(opt)
 
 root_path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343'
 
-print('将总值结果写入文件')
+print('命令行参数写入文件')
 f_all=open(os.path.join(opt.checkpointDir,'train_param.txt'), 'a')
 f_all.write("\n"+"workers"+"  "+str(opt.workers))
 f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
@@ -137,9 +138,9 @@ criterion_RepLoss=RepulsionLoss(alpha=opt.alpha,radius=opt.radius).to(device)
 
 # setup optimizer
 optimizerG = torch.optim.Adam(myNet.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05, weight_decay=opt.weight_decay)
-schedulerG = torch.optim.lr_scheduler.StepLR(optimizerG, step_size=opt.step_size, gamma=0.2)
+schedulerG = torch.optim.lr_scheduler.StepLR(optimizerG, step_size=opt.step_size, gamma=opt.gamma)
 optimizerD = torch.optim.Adam(myNetD.parameters(), lr=0.0001,betas=(0.9, 0.999),eps=1e-05,weight_decay=opt.weight_decay)
-schedulerD = torch.optim.lr_scheduler.StepLR(optimizerD, step_size=opt.step_size, gamma=0.2)
+schedulerD = torch.optim.lr_scheduler.StepLR(optimizerD, step_size=opt.step_size, gamma=opt.gamma)
 
 real_label = 1
 fake_label = 0
