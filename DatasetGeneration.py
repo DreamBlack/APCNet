@@ -9,10 +9,10 @@ import sys
 import threading
 
 # parser = argparse.ArgumentParser()  # create an argumentparser object
-# parser.add_argument('--class_choice', default='04379243', help="which class choose to train")
-# parser.add_argument('--four_dataset', type = bool, default = False, help='generate chapter 4 dataset')
-# parser.add_argument('--pf_net_pointcloud_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate', help="pf_net_pointcloud_father_path")
-# parser.add_argument('--generate_pc_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/', help="generate_pc_father_path(no need for three or four)")
+# parser.add_argument('--class_choice', default='02958343', help="which class choose to train")
+# parser.add_argument('--four_dataset', type = int, default = 1, help='generate chapter 4 dataset')
+# parser.add_argument('--pf_net_pointcloud_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0', help="pf_net_pointcloud_father_path")
+# parser.add_argument('--generate_pc_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour', help="generate_pc_father_path(no need for three or four)")
 # parser.add_argument('--train_split_path', default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0',help="train_split_path")
 # opt = parser.parse_args()
 # print(opt)
@@ -100,7 +100,7 @@ def generatCharpterFourForTable(split):
 
 def generatCharpterFourePCForCat(cat_id):
     cat_path = os.path.join(pfnet_pc_father_path, cat_id, "points")
-    out_father_path=os.path.join(outpc_father_path,"Four", cat_id)
+    out_father_path=os.path.join(outpc_father_path, cat_id)
     if not os.path.exists(out_father_path):
         os.makedirs(out_father_path)
     cnt=0
@@ -209,7 +209,8 @@ def generatPCForCat(cat_id):
     out_father_path = os.path.join(outpc_father_path,"Three", cat_id)
     if not os.path.exists(out_father_path):
         os.makedirs(out_father_path)
-
+    print("cat_path %s"%(cat_path))
+    print("out_path %s" % (out_father_path))
     cnt=0
     for home,dirs,files in os.walk(cat_path):
         for pc_filename in files:
@@ -385,7 +386,7 @@ def farthest_point_sample(xyz, npoint, RAN=True):
 
 if __name__=='__main__':
     if opt.class_choice=="04379243":
-        if opt.four_dataset:
+        if opt.four_dataset==1:
             print("start generate charpter four point clouds for table")
             generatCharpterFourForTable()
         else:
@@ -393,7 +394,7 @@ if __name__=='__main__':
             generatPCForTableCat('train')
             #generatPCForTableCat('test')
     else:
-        if opt.four_dataset:
+        if opt.four_dataset==1:
             print("start generate charpter four point clouds for %s" % (opt.class_choice))
             generatCharpterFourePCForCat(opt.class_choice)
         else:

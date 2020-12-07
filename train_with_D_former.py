@@ -14,6 +14,7 @@ from myutils import PointLoss,RepulsionLoss
 from tensorboardX import SummaryWriter
 from my_discriminator import myDiscriminator
 import time
+import os
 
 parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
@@ -24,8 +25,8 @@ parser.add_argument('--weight_decay', type=float, default=0.001)
 parser.add_argument('--learning_rate', default=0.0002, type=float, help='learning rate in training')
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. default=0.9')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
-parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
-parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=0, help='0 not use D-net,1 use D-net')
 parser.add_argument('--Rep_choose',type=int, default=0, help='0 not use Rep Loss,1 use Rep Loss')
@@ -46,6 +47,21 @@ parser.add_argument('--each_scales_size',type=int,default=1,help='each scales si
 parser.add_argument('--wtl2',type=float,default=0.95,help='weight for loss 0 means do not use else use with this weight')
 opt = parser.parse_args()
 print(opt)
+
+root_path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343'
+
+print('将总值结果写入文件')
+f_all=open(os.path.join(opt.checkpointDir,'train_param.txt'), 'a')
+f_all.write("\n"+"workers"+"  "+str(opt.workers))
+f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
+f_all.write("\n"+"attention_encoder"+"  "+str(opt.attention_encoder))
+f_all.write("\n"+"folding_decoder"+"  "+str(opt.folding_decoder))
+f_all.write("\n"+"class_choice"+"  "+str(opt.class_choice))
+f_all.write("\n"+"D_choose"+"  "+str(opt.D_choose))
+f_all.write("\n"+"Rep_choose"+"  "+str(opt.Rep_choose))
+f_all.write("\n"+"alpha"+"  "+str(opt.alpha))
+f_all.write("\n"+"step_size"+"  "+str(opt.step_size))
+f_all.close()
 
 continueLast=False
 resume_epoch=0
