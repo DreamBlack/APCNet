@@ -44,7 +44,6 @@ class MyDataset(data.Dataset):
         with open(os.path.join(self.root, 'train_test_split', 'shuffled_test_file_list.json'), 'r') as f:
             test_ids = set([str(d.split('/')[2]) for d in json.load(f)])
 
-
         for item in self.cat:  # item is name eg. lamp
             self.meta[item] = []
 
@@ -68,15 +67,15 @@ class MyDataset(data.Dataset):
                 sys.exit(-1)
 
             # table 数据集太大了，选其中几个就好了
-            if class_choice == 'Table':
-                if split == 'train':
-                    fns = fns[:2658]
-                elif split == 'val':
-                    fns = fns[:396]
-                elif split == 'test':
-                    fns = fns[:704]
-                else:
-                    print('Unknown split: %s. Exiting..' % (split))
+            # if class_choice == 'Table':
+            #     if split == 'train':
+            #         fns = fns[:2658]
+            #     elif split == 'val':
+            #         fns = fns[:396]
+            #     elif split == 'test':
+            #         fns = fns[:704]
+            #     else:
+            #         print('Unknown split: %s. Exiting..' % (split))
 
             print(split+"_size %d"%(len(fns)))  # 1118*5*8=44720
             for fn in fns:  # 点云路径，图片路径，类别名，objid

@@ -8,19 +8,22 @@ import json
 import sys
 import threading
 
-parser = argparse.ArgumentParser()  # create an argumentparser object
-parser.add_argument('--class_choice', default='04379243', help="which class choose to train")
-parser.add_argument('--four_dataset', type = bool, default = False, help='generate chapter 4 dataset')
-parser.add_argument('--pf_net_pointcloud_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate', help="pf_net_pointcloud_father_path")
-parser.add_argument('--generate_pc_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/', help="generate_pc_father_path(no need for three or four)")
-parser.add_argument('--train_split_path', default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0',help="train_split_path")
-opt = parser.parse_args()
-print(opt)
+# parser = argparse.ArgumentParser()  # create an argumentparser object
+# parser.add_argument('--class_choice', default='04379243', help="which class choose to train")
+# parser.add_argument('--four_dataset', type = bool, default = False, help='generate chapter 4 dataset')
+# parser.add_argument('--pf_net_pointcloud_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate', help="pf_net_pointcloud_father_path")
+# parser.add_argument('--generate_pc_father_path',default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/', help="generate_pc_father_path(no need for three or four)")
+# parser.add_argument('--train_split_path', default='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0',help="train_split_path")
+# opt = parser.parse_args()
+# print(opt)
 #"/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/"
 #"/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate"
-pfnet_pc_father_path=opt.pf_net_pointcloud_father_path
-outpc_father_path = opt.generate_pc_father_path
-train_split_path=opt.train_split_path
+# pfnet_pc_father_path=opt.pf_net_pointcloud_father_path
+# outpc_father_path = opt.generate_pc_father_path
+# train_split_path=opt.train_split_path
+pfnet_pc_father_path=''#opt.pf_net_pointcloud_father_path
+outpc_father_path = ''#opt.generate_pc_father_path
+train_split_path=''#opt.train_split_path
 def getFilenamesForTable(split,cat_path,train_split_path):
     with open(os.path.join( train_split_path, 'train_test_split', 'shuffled_train_file_list.json'), 'r') as f:
         train_ids = set([str(d.split('/')[2]) for d in json.load(f)])  # set() 函数创建一个无序不重复元素集,para is  可迭代对象对象；
@@ -37,27 +40,27 @@ def getFilenamesForTable(split,cat_path,train_split_path):
     fnsTest = [fn for fn in fns if fn[0:-4] in test_ids]
 
     # table 数据集太大了，选其中几个就好了
-    fnsTrain = fns[:2658]
-    fnsVal = fns[:396]
-    fnsTest = fns[:704]
+    #fnsTrain = fns[:2658]
+    fnsVal = []
+    #fnsTest = fns[:704]
 
 
 
     fns=fnsTrain+fnsTest+fnsVal
-    if split == 'trainval':
-        return fns+fnsVal
-    elif split == 'train':
-        print("Train_size %d" % (len(fnsTrain)))  # 1118*5*8=44720
-        return fnsTrain
-    elif split == 'val':
-        print("Val_size %d" % (len(fnsVal)))  # 1118*5*8=44720
-        return fnsVal
-    elif split == 'test':
-        print("Test_size %d" % (len(fnsTest)))  # 1118*5*8=44720
-        return fnsTest
-    else:
-        print('Unknown split: %s. Exiting..' % (split))
-        sys.exit(-1)
+    # if split == 'trainval':
+    #     return fns+fnsVal
+    # elif split == 'train':
+    #     print("Train_size %d" % (len(fnsTrain)))  # 1118*5*8=44720
+    #     return fnsTrain
+    # elif split == 'val':
+    #     print("Val_size %d" % (len(fnsVal)))  # 1118*5*8=44720
+    #     return fnsVal
+    # elif split == 'test':
+    #     print("Test_size %d" % (len(fnsTest)))  # 1118*5*8=44720
+    #     return fnsTest
+    # else:
+    #     print('Unknown split: %s. Exiting..' % (split))
+    #     sys.exit(-1)
     return fns
 
 def generatCharpterFourForTable(split):
@@ -172,6 +175,7 @@ def dividePointCloud(pc,center,missingNum=256,incompleteNum=1024):
     return missingPC, incompletePC.data[missingNum:]
 
 def generatPCForTableCat(split):
+    print("start for "+split)
     cat_path = os.path.join(pfnet_pc_father_path, "04379243", "points")
     out_father_path = os.path.join(outpc_father_path,"Three", "04379243")
     if not os.path.exists(out_father_path):
@@ -183,12 +187,14 @@ def generatPCForTableCat(split):
     for pc_filename in fns:
         choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
                   torch.Tensor([-1, 1, 0])]
+        point_set = np.loadtxt(os.path.join(cat_path, pc_filename)).astype(np.float32)
+        point_set = torch.from_numpy(point_set)
         for i in range(len(choice)):
             gt_filename = os.path.join(out_father_path, str(i) + "gt" + pc_filename)
             incomplete_filename = os.path.join(out_father_path, str(i) + "incomplete" + pc_filename)
+            if  os.path.exists(gt_filename):
+                continue
 
-            point_set = np.loadtxt(os.path.join(cat_path, pc_filename)).astype(np.float32)
-            point_set = torch.from_numpy(point_set)
             gt, incompletePC = dividePointCloud(point_set, choice[i])
 
             np.savetxt(gt_filename, gt)
@@ -384,13 +390,8 @@ if __name__=='__main__':
             generatCharpterFourForTable()
         else:
             print("start generate charpter three point clouds for table")
-            threads=[threading.Thread(target=generatPCForTableCat,args=('train',)),
-                     threading.Thread(target=generatPCForTableCat,args=('val',)),
-                     threading.Thread(target=generatPCForTableCat,args=('test',))]
-
-            for t in threads:
-                print(t.name+"starts!")
-                t.start()
+            generatPCForTableCat('train')
+            #generatPCForTableCat('test')
     else:
         if opt.four_dataset:
             print("start generate charpter four point clouds for %s" % (opt.class_choice))
