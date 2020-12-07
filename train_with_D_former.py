@@ -37,7 +37,7 @@ parser.add_argument('--noDCkPath', default='noDCkPath', help="which class choose
 parser.add_argument('--tensorboardDir',  help="which path to store tensorboard")
 parser.add_argument('--checkpointDir',  help="which path to store checkpoint")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--drop',type=float,default=0.2)
+parser.add_argument('--drop',type=float,default=0.5)
 parser.add_argument('--alpha',type=float,default=0.5, help='rep loss weight')
 parser.add_argument('--radius',type=float,default=0.07, help='radius of knn')
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
@@ -62,6 +62,8 @@ f_all.write("\n"+"D_choose"+"  "+str(opt.D_choose))
 f_all.write("\n"+"Rep_choose"+"  "+str(opt.Rep_choose))
 f_all.write("\n"+"alpha"+"  "+str(opt.alpha))
 f_all.write("\n"+"step_size"+"  "+str(opt.step_size))
+f_all.write("\n"+"gamma"+"  "+str(opt.gamma))
+f_all.write("\n"+"drop"+"  "+str(opt.drop))
 f_all.close()
 
 continueLast=False
@@ -97,7 +99,7 @@ Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45
 Weight3_dims = (512 + 128, 1024, 1024, 256)
 knn = 48
 sigma = 0.008
-myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
+myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,dropout=opt.drop,folding=opt.folding_decoder,attention=opt.attention_encoder)
 myNetD=myDiscriminator(256,MLP_dimsD,FC_dimsD)
 
 print("Let's use", torch.cuda.device_count(), "GPUs!")

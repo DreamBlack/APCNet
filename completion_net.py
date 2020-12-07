@@ -5,12 +5,21 @@ from pointcloud_encoder import pointcloud_encoder
 from decoder import decoder
 class myNet(nn.Module):
     def __init__(self,c,h,w, mlp_dims, fc_dims,grid_dims, Folding1_dims,
-                 Folding2_dims, Weight1_dims, Weight3_dims,folding=True,attention=True):
+                 Folding2_dims, Weight1_dims, Weight3_dims,dropout=0,folding=1,attention=1):
         assert (mlp_dims[-1] == fc_dims[0])
         super(myNet, self).__init__()
         self.folding = folding
         self.attention=attention
+        self.dropout=dropout
         self.image_encoder = image_encoder(c,h,w,self.attention)
+        if attention==1:
+            print("Use attention in image encoder")
+        else:
+            print("Do not use attention in image encoder")
+        if folding==1:
+            print("Use folding as decoder")
+        else:
+            print("Use fc as decoder")
         self.pointcloud_encoder=pointcloud_encoder(mlp_dims, fc_dims)
         self.get_sig_weight=nn.Sequential(
             nn.Linear(512 * 2, 2),
@@ -30,9 +39,11 @@ class myNet(nn.Module):
                  Folding2_dims, Weight1_dims, Weight3_dims)
         self.fc_decoder = nn.Sequential(
             nn.Linear(512, 1024),
+            nn.Dropout(dropout),
             #nn.BatchNorm1d(1024),
             nn.ReLU(True),
             nn.Linear(1024, 1024),
+            nn.Dropout(dropout),
             #nn.BatchNorm1d(1024),
             nn.ReLU(True),
             nn.Linear(1024, 256 * 3)
@@ -51,7 +62,7 @@ class myNet(nn.Module):
         cat_feature = torch.mul(sig_weight, cat_feature)
         fusion_feature = cat_feature.view(cat_feature.size(0), 1024)
         fusion_feature=self.feature_fusion(fusion_feature)
-        if self.folding:
+        if self.folding==1:
             fusion_feature = fusion_feature.unsqueeze(1)
             f, _ = self.decoder.forward(fusion_feature)
         else:
@@ -73,7 +84,7 @@ if __name__ == '__main__':
     Weight3_dims = (512 + 128, 1024, 1024, 256)
     knn = 48
     sigma = 0.008
-    model = myNet(3,128,128,MLP_dims, FC_dims,grid_dims,Folding1_dims,Folding2_dims,Weight1_dims,Weight3_dims,folding=False)
+    model = myNet(3,128,128,MLP_dims, FC_dims,grid_dims,Folding1_dims,Folding2_dims,Weight1_dims,Weight3_dims,folding=0,attention=0)
     print("input_size")
     print(pc.shape,image.shape)
     out = model(pc,image)
