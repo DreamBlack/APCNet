@@ -46,7 +46,9 @@ print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 torch.cuda.manual_seed_all(opt.manualSeed)
-
+incompleteColor='lightgray'
+recColor='royalblue'
+pointSize=50
 def draw_point_cloud(incomplete,rec_missing, elev=0,azim=0,output_filename=None):
     """ points is a Nx3 numpy array """
     fig = plt.figure(figsize=(24, 12), facecolor='w')  #
@@ -54,8 +56,8 @@ def draw_point_cloud(incomplete,rec_missing, elev=0,azim=0,output_filename=None)
 
 
     ax0 = fig.add_subplot(111, projection='3d')
-    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax0.scatter(rec_missing[:, 0], rec_missing[:, 1], rec_missing[:, 2], color='r')
+    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax0.scatter(rec_missing[:, 0], rec_missing[:, 1], rec_missing[:, 2], color=recColor, s=pointSize)
     ax0.set_axis_off()
     plt.title("GT")
 
@@ -73,14 +75,14 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_f
     plt.title("input image")
 
     ax0 = fig.add_subplot(132, projection='3d')
-    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax0.scatter(missings[0][:, 0], missings[0][:, 1], missings[0][:, 2], color='r')
+    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax0.scatter(missings[0][:, 0], missings[0][:, 1], missings[0][:, 2], color=recColor, s=pointSize)
     ax0.set_axis_off()
     plt.title("GT")
 
     ax1 = fig.add_subplot(133, projection='3d')
-    ax1.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax1.scatter(missings[1][:, 0], missings[1][:, 1], missings[1][:, 2], color='r')
+    ax1.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax1.scatter(missings[1][:, 0], missings[1][:, 1], missings[1][:, 2], color=recColor, s=pointSize)
     ax1.set_axis_off()
     plt.title("Vanilla")
 
@@ -94,12 +96,12 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_f
 def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filename=None):
     '''
     对于每个物体，再一行中画出6个关于该物体的结果，从左到右分别是image，gt(in+mi),vanilla,gan,rep,full
-    :param incomplete:gt 
+    :param incomplete:gt
     :param missings: 5个missing，分别为gt,vanilla,gan,rep,full
-    :param elev: 
-    :param azim: 
-    :param output_filename: 
-    :return: 
+    :param elev:
+    :param azim:
+    :param output_filename:
+    :return:
     '''
     """ incompletes is a 5*Nx3 numpy array """
     fig=plt.figure(figsize=(24,12),facecolor='w')#
@@ -110,32 +112,32 @@ def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filena
     plt.title("input image")
 
     ax0 = fig.add_subplot(162,projection='3d')
-    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2],color='g')
-    ax0.scatter(missings[0][:, 0], missings[0][:, 1], missings[0][:, 2], color='r')
+    ax0.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2],color=incompleteColor, s=pointSize)
+    ax0.scatter(missings[0][:, 0], missings[0][:, 1], missings[0][:, 2], color=recColor, s=pointSize)
     ax0.set_axis_off()
     plt.title("GT")
 
     ax1 = fig.add_subplot(163,projection='3d')
-    ax1.scatter(incomplete[ :, 0], incomplete[ :, 1], incomplete[ :, 2], color='g')
-    ax1.scatter(missings[1][ :, 0], missings[1][ :, 1], missings[1][ :, 2], color='r')
+    ax1.scatter(incomplete[ :, 0], incomplete[ :, 1], incomplete[ :, 2], color=incompleteColor, s=pointSize)
+    ax1.scatter(missings[1][ :, 0], missings[1][ :, 1], missings[1][ :, 2], color=recColor, s=pointSize)
     ax1.set_axis_off()
     plt.title("Vanilla")
 
     ax2 = fig.add_subplot(164, projection='3d')
-    ax2.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax2.scatter(missings[2][:, 0], missings[2][:, 1], missings[2][:, 2], color='r')
+    ax2.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax2.scatter(missings[2][:, 0], missings[2][:, 1], missings[2][:, 2], color=recColor, s=pointSize)
     ax2.set_axis_off()
     plt.title("With D")
 
     ax3 = fig.add_subplot(165, projection='3d')
-    ax3.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax3.scatter(missings[3][:, 0], missings[3][:, 1], missings[3][:, 2], color='r')
+    ax3.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax3.scatter(missings[3][:, 0], missings[3][:, 1], missings[3][:, 2], color=recColor, s=pointSize)
     ax3.set_axis_off()
     plt.title("With Rep")
 
     ax4 = fig.add_subplot(166, projection='3d')
-    ax4.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color='g')
-    ax4.scatter(missings[4][:, 0], missings[4][:, 1], missings[4][:, 2], color='r')
+    ax4.scatter(incomplete[:, 0], incomplete[:, 1], incomplete[:, 2], color=incompleteColor, s=pointSize)
+    ax4.scatter(missings[4][:, 0], missings[4][:, 1], missings[4][:, 2], color=recColor, s=pointSize)
     ax4.set_axis_off()
     plt.title("With D&Rep")
     plt.show()
@@ -155,17 +157,17 @@ assert test_dset
 # good:10749,2269,5320
 # bad:9958,9960,4305
 if __name__ == '__main__':
-    # dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate/Three/04379243'
-    # filename1='/0gt103ad97126bc54f4fc5e9e325e1bd5b8.pts'
-    # filename2 = '/0incomplete103ad97126bc54f4fc5e9e325e1bd5b8.pts'
-    # # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
-    # complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
-    # gt=np.loadtxt(dir_path+filename1)
-    # incomplete = np.loadtxt(dir_path + filename2)
-    # draw_point_cloud(gt,incomplete)
-    no=True
+    dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/03636649'
+    filename1='/gt1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
+    filename2 = '/incomplete1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
+    # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
+    complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
+    gt=np.loadtxt(dir_path+filename1)
+    incomplete = np.loadtxt(dir_path + filename2)
+    draw_point_cloud(gt,incomplete)
+    no=False
     if no:
         missings = []
         incomplete, gt, image, filename = test_dset.__getitem__(opt.index)
