@@ -16,9 +16,9 @@ np.set_printoptions(suppress=True)
 parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
 parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
-parser.add_argument('--class_choice', default='Car', help="which class choose to train")
-parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
-parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
+parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
 parser.add_argument('--netG', help="path to netG (to load as model)")
@@ -26,6 +26,16 @@ parser.add_argument('--result_path', help="path to netG (to load as model)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 opt = parser.parse_args()
 print(opt)
+
+print('命令行参数写入文件')
+f_all=open(os.path.join(opt.result_path,'cmd_param.txt'), 'a')
+f_all.write("\n"+"workers"+"  "+str(opt.workers))
+f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
+f_all.write("\n"+"attention_encoder"+"  "+str(opt.attention_encoder))
+f_all.write("\n"+"folding_decoder"+"  "+str(opt.folding_decoder))
+f_all.write("\n"+"class_choice"+"  "+str(opt.class_choice))
+f_all.write("\n"+"netG"+"  "+str(opt.netG))
+f_all.close()
 
 continueLast = False
 resume_epoch = 0
@@ -61,7 +71,7 @@ sigma = 0.008
 mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
 mynet = torch.nn.DataParallel(mynet)
 mynet.to(device)
-mynet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
+mynet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'],strict=False)
 mynet.eval()
 
 criterion_PointLoss = PointLoss_test().to(device)
@@ -134,5 +144,6 @@ f_all.write('\n'+'CD: %.4f Gt_Pre: %.4f Pre_Gt: %.4f '
 f_all.write('\n'+'CD_ALL: %.4f Gt_Pre_ALL: %.4f Pre_Gt_ALL: %.4f '
                   % (float(CD_ALL*1000), float(Gt_Pre_ALL*1000), float(Pre_Gt_ALL*1000)))
 f_all.close()
+
 
 
