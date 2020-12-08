@@ -14,11 +14,12 @@ parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--manualSeed', type=int,default=1, help='manual seed')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--class_choice', default='Car', help="which class choose to train")
-parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
-parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--netG', help="path to netG (to load as model)")
 parser.add_argument('--index', type=int,default=400, help='which obj to show')
 opt = parser.parse_args()
+print(opt)
 
 # path_Nets=['/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/Checkpoint (复件)/point_netG150.pth',
 #            '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/withDCkPath/Trained_Model/point_netG50.pth',
@@ -83,12 +84,12 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_f
     ax1.set_axis_off()
     plt.title("Vanilla")
 
-    plt.show()
-    # for angle in range(0, 360):
-    #     ax0.view_init(30, angle)
-    #     ax1.view_init(30, angle)
-    #     plt.draw()
-    #     plt.pause(.001)
+    #plt.show()
+    for angle in range(0, 360):
+        ax0.view_init(30, angle)
+        ax1.view_init(30, angle)
+        plt.draw()
+        plt.pause(.001)
     # savefig(output_filename)
 def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filename=None):
     '''
@@ -154,17 +155,17 @@ assert test_dset
 # good:10749,2269,5320
 # bad:9958,9960,4305
 if __name__ == '__main__':
-    dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate/Three/04379243'
-    filename1='/0gt103ad97126bc54f4fc5e9e325e1bd5b8.pts'
-    filename2 = '/0incomplete103ad97126bc54f4fc5e9e325e1bd5b8.pts'
-    # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
-    complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
-    gt=np.loadtxt(dir_path+filename1)
-    incomplete = np.loadtxt(dir_path + filename2)
-    draw_point_cloud(gt,incomplete)
-    no=False
+    # dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerate/Three/04379243'
+    # filename1='/0gt103ad97126bc54f4fc5e9e325e1bd5b8.pts'
+    # filename2 = '/0incomplete103ad97126bc54f4fc5e9e325e1bd5b8.pts'
+    # # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+    # # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
+    # complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
+    # gt=np.loadtxt(dir_path+filename1)
+    # incomplete = np.loadtxt(dir_path + filename2)
+    # draw_point_cloud(gt,incomplete)
+    no=True
     if no:
         missings = []
         incomplete, gt, image, filename = test_dset.__getitem__(opt.index)
