@@ -16,8 +16,8 @@ dataset_pathT='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shape
 dataset_pathF='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/'
 plt.figure()
 class MyDataset(data.Dataset):
-    def __init__(self, root=dataset_pathT, three=True, classification=False, class_choice=None, split='train'):
-        if not three:
+    def __init__(self, root=dataset_pathT, three=1, classification=False, class_choice=None, split='train',four_data=0):
+        if  three==0 or four_data==1:
             root=dataset_pathF
         self.root = root # pointcloud path
         self.catfile = os.path.join(self.root, 'synsetoffset2category.txt')
@@ -83,10 +83,17 @@ class MyDataset(data.Dataset):
                 image_view = ['00', '09', '11', '18', '22']
 
                 good_center=[]
-                if class_choice == 'Table':
-                    image_view = ['00', '09', '18']
+                image_view = ['00', '09', '18']
 
-                if three:
+                if four_data==1 or three==0:
+                    for view in image_view:
+                        self.meta[item].append(
+                            (os.path.join(dir_point, 'incomplete' + token + '.pts'),
+                             os.path.join(dir_point, 'gt' + token + '.pts'),
+                             os.path.join(dir_image, token, 'rendering', view + '.png'),
+                             self.cat[item],
+                             token))
+                else:
                     if class_choice=='Lamp':
                         good_center=[0,1,2,6,7]
                     else:
@@ -107,14 +114,7 @@ class MyDataset(data.Dataset):
                     #              os.path.join(dir_image, token, 'rendering', view + '.png'),
                     #              self.cat[item],
                     #              token))
-                else:
-                    for view in image_view:
-                        self.meta[item].append(
-                            (os.path.join(dir_point, 'incomplete' + token + '.pts'),
-                             os.path.join(dir_point, 'gt' + token + '.pts'),
-                             os.path.join(dir_image, token, 'rendering', view + '.png'),
-                             self.cat[item],
-                             token))
+
 
         self.datapath = []  #  所有path的总和
         for item in self.cat:
@@ -183,15 +183,21 @@ class MyDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-    dset = MyDataset( classification=True,three=True,
-                       class_choice='Table', split='test')
+    dset = MyDataset(classification=True, three=0, class_choice='Car', split='train')
+    assert dset
+    dataloader = torch.utils.data.DataLoader(dset, batch_size=16, shuffle=True, num_workers=16)
+    for epoch in range(0, 10):
+        for i, data in enumerate(dataloader, 0):
+            incomplete, gt, image, filename = data
+            print("filename %d: %s"%(epoch,filename))
+            break
     #    d = PartDataset( root='./dataset/shapenetcore_partanno_segmentation_benchmark_v0/',classification=False, class_choice=None, npoints=4096, split='test')
-    print(len(dset))
-    incomplete,gt, image, filename= dset[1000]
-
-    print(incomplete.size())
-    print(gt.size())
-    print(image.size())
+    # print(len(dset))
+    # incomplete,gt, image, filename= dset[1000]
+    #
+    # print(incomplete.size())
+    # print(gt.size())
+    # print(image.size())
 #    print(incomplete)
 #    ps = ps.numpy()
     #np.savetxt('ps'+'.xyz', incomplete, fmt = "%f %f %f")

@@ -27,17 +27,18 @@ parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam. de
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
+parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=0, help='0 not use D-net,1 use D-net')
 parser.add_argument('--Rep_choose',type=int, default=0, help='0 not use Rep Loss,1 use Rep Loss')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
-parser.add_argument('--withDCkPath', default='withDCkPath', help="which class choose to train")
-parser.add_argument('--noDCkPath', default='noDCkPath', help="which class choose to train")
-parser.add_argument('--tensorboardDir',  help="which path to store tensorboard")
-parser.add_argument('--checkpointDir',  help="which path to store checkpoint")
+parser.add_argument('--checkpointDir', default='', help="path to netG (to continue training)")
+parser.add_argument('--tensorboardDir', default='', help="path to netD (to continue training)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--drop',type=float,default=0.5)
+parser.add_argument('--drop',type=float,default=0)
+parser.add_argument('--dropout_feature',type=float,default=0, help='use when charpter 4 folding decoder')
 parser.add_argument('--alpha',type=float,default=0.5, help='rep loss weight')
 parser.add_argument('--radius',type=float,default=0.07, help='radius of knn')
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
@@ -48,6 +49,8 @@ parser.add_argument('--each_scales_size',type=int,default=1,help='each scales si
 parser.add_argument('--wtl2',type=float,default=0.95,help='weight for loss 0 means do not use else use with this weight')
 opt = parser.parse_args()
 print(opt)
+if opt.pointnetplus_encoder==1:
+    torch.backends.cudnn.enabled = False
 
 root_path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343'
 
@@ -57,6 +60,7 @@ f_all.write("\n"+"workers"+"  "+str(opt.workers))
 f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
 f_all.write("\n"+"attention_encoder"+"  "+str(opt.attention_encoder))
 f_all.write("\n"+"folding_decoder"+"  "+str(opt.folding_decoder))
+f_all.write("\n"+"pointnetplus_encoder"+"  "+str(opt.pointnetplus_encoder))
 f_all.write("\n"+"class_choice"+"  "+str(opt.class_choice))
 f_all.write("\n"+"D_choose"+"  "+str(opt.D_choose))
 f_all.write("\n"+"Rep_choose"+"  "+str(opt.Rep_choose))
@@ -64,7 +68,11 @@ f_all.write("\n"+"alpha"+"  "+str(opt.alpha))
 f_all.write("\n"+"step_size"+"  "+str(opt.step_size))
 f_all.write("\n"+"gamma"+"  "+str(opt.gamma))
 f_all.write("\n"+"drop"+"  "+str(opt.drop))
-f_all.close()
+f_all.write("\n"+"dropout_feature"+"  "+str(opt.dropout_feature))
+f_all.write("\n"+"learning_rate"+"  "+str(opt.learning_rate))
+f_all.write("\n"+"four_data"+"  "+str(opt.four_data))
+
+
 
 continueLast=False
 resume_epoch=0
@@ -90,6 +98,13 @@ def weights_init_normal(m):
 
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
 FC_dimsG = (1024, 1024, 512)
+if opt.class_choice=='Car':
+    MLP_dimsG = (3, 64, 64, 64, 128, 512)
+    FC_dimsG = (512, 512, 512)
+f_all.write("\n"+"MLP_dimsG"+"  "+str(MLP_dimsG))
+f_all.write("\n"+"FC_dimsG"+"  "+str(FC_dimsG))
+
+f_all.close()
 MLP_dimsD = (3, 64, 64, 64, 128, 1024)
 FC_dimsD = (1024, 1024, 512)
 grid_dims = (16, 16)  # defaul 45
@@ -99,8 +114,9 @@ Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45
 Weight3_dims = (512 + 128, 1024, 1024, 256)
 knn = 48
 sigma = 0.008
-myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,dropout=opt.drop,folding=opt.folding_decoder,attention=opt.attention_encoder)
+myNet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,dropout=opt.drop,folding=opt.folding_decoder,dropout_feature=opt.dropout_feature,attention=opt.attention_encoder,pointnetplus=opt.pointnetplus_encoder)
 myNetD=myDiscriminator(256,MLP_dimsD,FC_dimsD)
+
 
 print("Let's use", torch.cuda.device_count(), "GPUs!")
 myNet = torch.nn.DataParallel(myNet)
@@ -126,11 +142,11 @@ if opt.cuda:
     torch.cuda.manual_seed_all(opt.manualSeed)
 
 # load data
-dset = MyDataset(classification=True,three=opt.folding_decoder,class_choice=opt.class_choice, split='train')
+dset = MyDataset(classification=True,three=opt.folding_decoder,class_choice=opt.class_choice, split='train',four_data=opt.four_data)
 assert dset
 dataloader = torch.utils.data.DataLoader(dset, batch_size=opt.batchSize,shuffle=True,num_workers = opt.workers)
 
-test_dset = MyDataset(classification=True,class_choice=opt.class_choice, split='test')
+test_dset = MyDataset(classification=True,class_choice=opt.class_choice, split='test',four_data=opt.four_data)
 assert test_dset
 test_dataloader = torch.utils.data.DataLoader(test_dset,batch_size=opt.batchSize,shuffle=True,num_workers = opt.workers)
 
@@ -139,9 +155,9 @@ criterion_PointLoss = PointLoss().to(device)
 criterion_RepLoss=RepulsionLoss(alpha=opt.alpha,radius=opt.radius).to(device)
 
 # setup optimizer
-optimizerG = torch.optim.Adam(myNet.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-05, weight_decay=opt.weight_decay)
+optimizerG = torch.optim.Adam(myNet.parameters(), lr=opt.learning_rate, betas=(0.9, 0.999), eps=1e-05, weight_decay=opt.weight_decay)
 schedulerG = torch.optim.lr_scheduler.StepLR(optimizerG, step_size=opt.step_size, gamma=opt.gamma)
-optimizerD = torch.optim.Adam(myNetD.parameters(), lr=0.0001,betas=(0.9, 0.999),eps=1e-05,weight_decay=opt.weight_decay)
+optimizerD = torch.optim.Adam(myNetD.parameters(), lr=opt.learning_rate*0.5,betas=(0.9, 0.999),eps=1e-05,weight_decay=opt.weight_decay)
 schedulerD = torch.optim.lr_scheduler.StepLR(optimizerD, step_size=opt.step_size, gamma=opt.gamma)
 
 real_label = 1
@@ -284,7 +300,7 @@ if __name__=='__main__':
 
             schedulerG.step()
 
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 torch.save({'epoch': epoch + 1,
                             'state_dict': myNet.state_dict()},
                            opt.checkpointDir+'/point_netG' + str(epoch) + '.pth')

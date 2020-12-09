@@ -16,6 +16,7 @@ parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--class_choice', default='Car', help="which class choose to train")
 parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
 parser.add_argument('--netG', help="path to netG (to load as model)")
 parser.add_argument('--index', type=int,default=400, help='which obj to show')
 opt = parser.parse_args()
@@ -152,23 +153,17 @@ def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filena
     #     plt.pause(.001)
     # savefig(output_filename)
 test_dset = MyDataset(classification=True,three=opt.folding_decoder,
-                 class_choice=opt.class_choice, split='test')
+                 class_choice=opt.class_choice, split='test',four_data=opt.four_data)
 assert test_dset
 # good:10749,2269,5320
 # bad:9958,9960,4305
 if __name__ == '__main__':
-    dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/03636649'
-    filename1='/gt1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
-    filename2 = '/incomplete1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
-    # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
-    # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
-    complete='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
-    gt=np.loadtxt(dir_path+filename1)
-    incomplete = np.loadtxt(dir_path + filename2)
-    draw_point_cloud(gt,incomplete)
-    no=False
+
+    no=True
     if no:
+        if opt.class_choice=='Car':
+            MLP_dimsG = (3, 64, 64, 64, 128, 512)
+            FC_dimsG = (512, 512, 512)
         missings = []
         incomplete, gt, image, filename = test_dset.__getitem__(opt.index)
         missings.append(gt)
@@ -185,7 +180,7 @@ if __name__ == '__main__':
 
         for i in range(1):
             net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,
-                        Weight3_dims, folding=opt.folding_decoder, attention=opt.attention_encoder)
+                        Weight3_dims, folding=opt.folding_decoder, attention=opt.attention_encoder,pointnetplus=opt.pointnetplus_encoder)
 
             net = torch.nn.DataParallel(net)
             net.to(device)
@@ -203,3 +198,14 @@ if __name__ == '__main__':
 
         # 构建incomplete和missings数组
         # pyplot_for_one_object(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
+    else:
+        dir_path = '/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/03636649'
+        filename1 = '/gt1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
+        filename2 = '/incomplete1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
+        # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+        # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
+        # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")
+        complete = '/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/shapenetcore_partanno_segmentation_benchmark_v0/04379243/points/1a00aa6b75362cc5b324368d54a7416f.pts'
+        gt = np.loadtxt(dir_path + filename1)
+        incomplete = np.loadtxt(dir_path + filename2)
+        draw_point_cloud(gt, incomplete)

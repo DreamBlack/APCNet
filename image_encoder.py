@@ -53,7 +53,7 @@ class attention_block(nn.Module): # attention_block
         return out
 
 class image_encoder(nn.Module):
-    def __init__(self,c,h,w,attention=True):
+    def __init__(self,c,h,w,attention=1):
         super(image_encoder,self).__init__()
         self.attention=attention
         self.conv_1=nn.Sequential(
@@ -104,7 +104,7 @@ class image_encoder(nn.Module):
 
         # 3*128*128
         n=x.shape[0]
-        if self.attention:
+        if self.attention==1:
             x = self.conv_1(x)
             x = self.attention_1(x)
 
@@ -139,6 +139,6 @@ class image_encoder(nn.Module):
 if __name__ == '__main__':
     n,c,h,w=64,32,128,128
     x = torch.ones((n,c,h,w))
-    model=image_encoder(32,128,128,attention=True)
+    model=image_encoder(32,128,128,attention=0)
     out=model(x)
     print(out.shape)
