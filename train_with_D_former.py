@@ -127,10 +127,10 @@ myNetD.to(device)
 myNetD.apply(weights_init_normal)
 
 if opt.netG != '' :
-    myNet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
+    myNet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'],strict=False)
     resume_epoch = torch.load(opt.netG)['epoch']
 if opt.netD != '' :
-    myNetD.load_state_dict(torch.load(opt.netD,map_location=lambda storage, location: storage)['state_dict'])
+    myNetD.load_state_dict(torch.load(opt.netD,map_location=lambda storage, location: storage)['state_dict'],strict=False)
     resume_epoch = torch.load(opt.netD)['epoch']
 
 if opt.manualSeed is None:
