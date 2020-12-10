@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 from MyDataset_former import MyDataset
 from completion_net import myNet
-from myutils import PointLoss,RepulsionLoss
+from myutils import PointLoss,EMDLoss,RepulsionLoss
 from tensorboardX import SummaryWriter
 from my_discriminator import myDiscriminator
 import time
@@ -32,15 +32,16 @@ parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=0, help='0 not use D-net,1 use D-net')
 parser.add_argument('--Rep_choose',type=int, default=0, help='0 not use Rep Loss,1 use Rep Loss')
+parser.add_argument('--loss_emd',type=int, default=0, help='0 use cd Loss,1 use emd Loss')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--checkpointDir', default='', help="path to netG (to continue training)")
 parser.add_argument('--tensorboardDir', default='', help="path to netD (to continue training)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--drop',type=float,default=0)
+parser.add_argument('--drop',type=float,default=0, help='use when charpter 4 in fc decoder')
 parser.add_argument('--dropout_feature',type=float,default=0, help='use when charpter 4 folding decoder')
 parser.add_argument('--alpha',type=float,default=0.5, help='rep loss weight')
-parser.add_argument('--radius',type=float,default=0.07, help='radius of knn')
+parser.add_argument('--radius',type=float,default=0.07, help='radius of rep loss')
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
 parser.add_argument('--step_size',type=int,default=40,help='LR step size')
 parser.add_argument('--gamma',type=float,default=0.2,help='LR gamma')
@@ -55,7 +56,7 @@ if opt.pointnetplus_encoder==1:
 root_path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/best_three/02958343'
 
 print('命令行参数写入文件')
-f_all=open(os.path.join(opt.checkpointDir,'train_param.txt'), 'a')
+f_all=open(os.path.join(opt.checkpointDir,'train_param.txt'), 'w')
 f_all.write("\n"+"workers"+"  "+str(opt.workers))
 f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
 f_all.write("\n"+"attention_encoder"+"  "+str(opt.attention_encoder))
@@ -71,7 +72,7 @@ f_all.write("\n"+"drop"+"  "+str(opt.drop))
 f_all.write("\n"+"dropout_feature"+"  "+str(opt.dropout_feature))
 f_all.write("\n"+"learning_rate"+"  "+str(opt.learning_rate))
 f_all.write("\n"+"four_data"+"  "+str(opt.four_data))
-
+f_all.write("\n"+"loss_emd"+"  "+str(opt.loss_emd))
 
 
 continueLast=False
@@ -98,9 +99,16 @@ def weights_init_normal(m):
 
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
 FC_dimsG = (1024, 1024, 512)
-if opt.class_choice=='Car':
+if  opt.class_choice=='Car' : # 不论是第三还是第四章，在car上的实验point都用小的
     MLP_dimsG = (3, 64, 64, 64, 128, 512)
     FC_dimsG = (512, 512, 512)
+if opt.folding_decoder==0 and opt.class_choice=='Lamp':# 第四章，在lamp上的fc实验point都用小的
+    MLP_dimsG = (3, 64, 64, 64, 128, 512)
+    FC_dimsG = (512, 512, 512)
+if opt.folding_decoder==1 and opt.four_data==1:# 第四章，在所有数据集上的folding实验point都用小的
+    MLP_dimsG = (3, 64, 64, 64, 128, 512)
+    FC_dimsG = (512, 512, 512)
+
 f_all.write("\n"+"MLP_dimsG"+"  "+str(MLP_dimsG))
 f_all.write("\n"+"FC_dimsG"+"  "+str(FC_dimsG))
 
@@ -152,6 +160,9 @@ test_dataloader = torch.utils.data.DataLoader(test_dset,batch_size=opt.batchSize
 
 criterion = torch.nn.BCEWithLogitsLoss().to(device)
 criterion_PointLoss = PointLoss().to(device)
+if opt.loss_emd==1:
+    criterion_PointLoss = EMDLoss().to(device)
+    print("Emd loss is used.")
 criterion_RepLoss=RepulsionLoss(alpha=opt.alpha,radius=opt.radius).to(device)
 
 # setup optimizer

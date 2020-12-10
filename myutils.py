@@ -3,8 +3,9 @@ import torch
 import torch.nn as nn
 from knn_cuda import KNN
 from pointnet2_utils import grouping_operation
-import emd
-
+from pointnet2 import pointnet2_utils as pn2_utils
+from emd import earth_mover_distance
+import numpy as np
 
 def array2samples_distance(array1, array2):
     """
@@ -60,13 +61,25 @@ class PointLoss(nn.Module):
     def forward(self, array1, array2):
         return chamfer_distance_numpy(array1, array2)
 
-class PointEMDLoss(nn.Module):
+class EMDLoss(nn.Module):
+    # must use cuda
     def __init__(self):
-        super(PointLoss, self).__init__()
-        self.EMD=emd.emdModule()
+        super(EMDLoss, self).__init__()
 
-    def forward(self, array1, array2,eps,iters):
-        return self.EMD(array1, array2,eps,iters)
+
+    def forward(self, array1, array2):
+        batch_size, num_point, num_features = array1.shape
+        return 10*torch.mean(earth_mover_distance(array1, array2,False))/num_point
+        # return torch.mean(earth_mover_distance(array1, array2,False))
+
+
+# class PointEMDLoss(nn.Module):
+#     def __init__(self):
+#         super(PointLoss, self).__init__()
+#         self.EMD=emd.emdModule()
+#
+#     def forward(self, array1, array2,eps,iters):
+#         return self.EMD(array1, array2,eps,iters)
 
 #  add  repu loss
 def knn_point(group_size, point_cloud, query_cloud, transpose_mode=False):
@@ -167,10 +180,20 @@ def farthest_point_sample(xyz, npoint, RAN=True):
 
 
 if __name__ == '__main__':
-    a = torch.randn(64, 256, 3)
-    b = torch.randn(64, 256, 3)
-    c = torch.randn(64, 64, 3)
-    d = torch.randn(64, 64, 3)
-    p = PointLoss()
-    print(p(a, b))
-    print(p(c, d) * 0.25)
+    # x1 = torch.rand(20, 1024, 3).cuda()
+    # x2 = torch.rand(20, 1024, 3).cuda()
+    # x1 = torch.tensor([[[0.9,0.6,0.7],[0.0,0,0]]]).cuda()
+    # x2 = torch.tensor([[[1.0,1.0,1.0],[0.5,0.5,0.5]]]).cuda()
+    # p1 = torch.from_numpy(np.array([[[1.7, -0.1, 0.1], [0.1, 1.2, 0.3]]], dtype=np.float32)).cuda()
+    # print(p1.shape)
+    # p1 = p1.repeat(3, 1, 1)
+    # p2 = torch.from_numpy(np.array([[[0.3, 1.8, 0.2], [1.2, -0.2, 0.3]]], dtype=np.float32)).cuda()
+    # p2 = p2.repeat(3, 1, 1)
+    # print(p1.shape)
+    # p = EMDLoss()
+    # print(p(p1, p2))
+    x1 = torch.tensor([[0.0, 0.0], [0.0, 0], [0.0, 0]]).cuda()
+    x2 = torch.tensor([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]]).cuda()
+    cd=array2samples_distance(x1,x2)
+
+    print(cd)
