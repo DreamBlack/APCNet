@@ -68,10 +68,7 @@ class EMDLoss(nn.Module):
 
 
     def forward(self, array1, array2):
-        batch_size, num_point, num_features = array1.shape
-        return 10*torch.mean(earth_mover_distance(array1, array2,False))/num_point
-        # return torch.mean(earth_mover_distance(array1, array2,False))
-
+        return torch.mean(earth_mover_distance(array1, array2,False))*10/256
 
 # class PointEMDLoss(nn.Module):
 #     def __init__(self):
@@ -180,20 +177,17 @@ def farthest_point_sample(xyz, npoint, RAN=True):
 
 
 if __name__ == '__main__':
-    # x1 = torch.rand(20, 1024, 3).cuda()
-    # x2 = torch.rand(20, 1024, 3).cuda()
-    # x1 = torch.tensor([[[0.9,0.6,0.7],[0.0,0,0]]]).cuda()
-    # x2 = torch.tensor([[[1.0,1.0,1.0],[0.5,0.5,0.5]]]).cuda()
-    # p1 = torch.from_numpy(np.array([[[1.7, -0.1, 0.1], [0.1, 1.2, 0.3]]], dtype=np.float32)).cuda()
-    # print(p1.shape)
-    # p1 = p1.repeat(3, 1, 1)
-    # p2 = torch.from_numpy(np.array([[[0.3, 1.8, 0.2], [1.2, -0.2, 0.3]]], dtype=np.float32)).cuda()
-    # p2 = p2.repeat(3, 1, 1)
-    # print(p1.shape)
-    # p = EMDLoss()
-    # print(p(p1, p2))
-    x1 = torch.tensor([[0.0, 0.0], [0.0, 0], [0.0, 0]]).cuda()
-    x2 = torch.tensor([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]]).cuda()
-    cd=array2samples_distance(x1,x2)
+    x1 = torch.rand(20, 1024, 3).cuda()
+    x2 = torch.rand(20, 1024, 3).cuda()
+    x1 = torch.tensor([[[0.9,0.6,0.7],[0.0,0,0]]]).cuda()
+    x2 = torch.tensor([[[1.0,1.0,1.0],[0.5,0.5,0.5]]]).cuda()
+    p1 = torch.from_numpy(np.array([[[1.7, -0.1, 0.1], [0.1, 1.2, 0.3]]], dtype=np.float32)).cuda()
+    print(p1.shape)
+    p1 = p1.repeat(3, 1, 1)
+    p2 = torch.from_numpy(np.array([[[0.3, 1.8, 0.2], [1.2, -0.2, 0.3]]], dtype=np.float32)).cuda()
+    p2 = p2.repeat(3, 1, 1)
+    print(p1.shape)
+    p = EMDLoss()
+    print(p(p1, p2))
 
-    print(cd)
+    print(PointLoss())

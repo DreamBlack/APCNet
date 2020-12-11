@@ -15,6 +15,7 @@ parser.add_argument('--manualSeed', type=int,default=1, help='manual seed')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--class_choice', default='Car', help="which class choose to train")
 parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
 parser.add_argument('--netG', help="path to netG (to load as model)")
@@ -33,6 +34,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True # promote
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
 FC_dimsG = (1024, 1024, 512)
+
+if opt.class_choice=='Lamp' or  opt.class_choice=='Car' :
+    if opt.pointnetplus_encoder==0 and opt.folding_decoder==0:# 第四章，在所有car lamp数据集上的folding实验point都用小的
+        MLP_dimsG = (3, 64, 64, 64, 128, 512)
+        FC_dimsG = (512, 512, 512)
+
 grid_dims = (16, 16)  # defaul 45
 Folding1_dims = (514, 512, 512, 3)  # for foldingnet
 Folding2_dims = (515, 512, 512, 3)  # for foldingnet
@@ -161,9 +168,9 @@ if __name__ == '__main__':
 
     no=True
     if no:
-        if opt.class_choice=='Car':
-            MLP_dimsG = (3, 64, 64, 64, 128, 512)
-            FC_dimsG = (512, 512, 512)
+        # if opt.class_choice=='Car':
+        #     MLP_dimsG = (3, 64, 64, 64, 128, 512)
+        #     FC_dimsG = (512, 512, 512)
         missings = []
         incomplete, gt, image, filename = test_dset.__getitem__(opt.index)
         missings.append(gt)
@@ -184,7 +191,7 @@ if __name__ == '__main__':
 
             net = torch.nn.DataParallel(net)
             net.to(device)
-            net.load_state_dict(torch.load(path_Nets[i], map_location=lambda storage, location: storage)['state_dict'])
+            net.load_state_dict(torch.load(path_Nets[i], map_location=lambda storage, location: storage)['state_dict'],strict=False)
             net.eval()
             fake = net(incomplete, image)
             missings.append(fake.cuda().data.cpu().squeeze(0).numpy())

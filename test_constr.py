@@ -71,7 +71,7 @@ Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45
 Weight3_dims = (512 + 128, 1024, 1024, 256)
 knn = 48
 sigma = 0.008
-mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder)
+mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,pointnetplus=opt.pointnetplus_encoder)
 
 
 print("Let's use", torch.cuda.device_count(), "GPUs!")

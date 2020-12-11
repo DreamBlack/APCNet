@@ -36,7 +36,7 @@ class attention_block(nn.Module): # attention_block
             nn.Conv2d(ch_in*2,ch_in,kernel_size=1,stride=1),
             nn.ReLU(inplace=True)
         )
-        self.last_relu=nn.ReLU(inplace=True)
+        self.last_relu=nn.ReLU()#inplace=True
 
     def forward(self,x):
         channel_feature=self.channel_attention(x)
@@ -47,9 +47,9 @@ class attention_block(nn.Module): # attention_block
 
         out=torch.cat([channel_feature,spatial_feature],dim=1)
         out=self.last_conv(out)
-
+        out = self.last_relu(out)
         out=torch.add(x,out)
-        out=self.last_relu(out)
+
         return out
 
 class image_encoder(nn.Module):
@@ -139,6 +139,6 @@ class image_encoder(nn.Module):
 if __name__ == '__main__':
     n,c,h,w=64,32,128,128
     x = torch.ones((n,c,h,w))
-    model=image_encoder(32,128,128,attention=0)
+    model=image_encoder(32,128,128,attention=1)
     out=model(x)
     print(out.shape)

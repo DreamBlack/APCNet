@@ -97,18 +97,14 @@ def weights_init_normal(m):
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
 
-MLP_dimsG = (3, 64, 64, 64, 128, 1024)
+MLP_dimsG = (3, 64, 64, 64, 128, 1024)#  所有第三章的实验point都用大的
 FC_dimsG = (1024, 1024, 512)
-if  opt.class_choice=='Car' : # 不论是第三还是第四章，在car上的实验point都用小的
-    MLP_dimsG = (3, 64, 64, 64, 128, 512)
-    FC_dimsG = (512, 512, 512)
-if opt.folding_decoder==0 and opt.class_choice=='Lamp':# 第四章，在lamp上的fc实验point都用小的
-    MLP_dimsG = (3, 64, 64, 64, 128, 512)
-    FC_dimsG = (512, 512, 512)
-if opt.folding_decoder==1 and opt.four_data==1:# 第四章，在所有数据集上的folding实验point都用小的
-    MLP_dimsG = (3, 64, 64, 64, 128, 512)
-    FC_dimsG = (512, 512, 512)
-
+if opt.class_choice=='Lamp' or  opt.class_choice=='Car' :
+    if opt.pointnetplus_encoder==0 and opt.folding_decoder==0:# 第四章，在所有car lamp数据集上的folding实验point都用小的
+        MLP_dimsG = (3, 64, 64, 64, 128, 512)
+        FC_dimsG = (512, 512, 512)
+# MLP_dimsG = (3, 64, 64, 64, 128, 512)
+# FC_dimsG = (512, 512, 512)
 f_all.write("\n"+"MLP_dimsG"+"  "+str(MLP_dimsG))
 f_all.write("\n"+"FC_dimsG"+"  "+str(FC_dimsG))
 
@@ -290,7 +286,7 @@ if __name__=='__main__':
                 errG = CD_LOSS
                 if opt.Rep_choose == 1:
                     RepLoss = criterion_RepLoss(torch.squeeze(fake, 1))
-                    errG += RepLoss
+                    errG =errG+ RepLoss
                 errG.backward()
 
                 optimizerG.step()
