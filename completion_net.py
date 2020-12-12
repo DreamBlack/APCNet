@@ -9,7 +9,7 @@ class testNet(nn.Module):
         super(testNet, self).__init__()
         self.l1=nn.Linear(3 * 2, 2)
         self.l2=nn.BatchNorm1d(2)
-        self.l3=nn.ReLU(True)
+        self.l3=nn.ReLU()
 
         self.lp=nn.Linear(2, 2)
         self.l6=nn.Sigmoid()
@@ -59,7 +59,7 @@ class myNet(nn.Module):
         self.get_sig_weight = nn.Sequential(
             nn.Linear(512 * 2, 256),
             nn.BatchNorm1d(256),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(256, 2),
             nn.Sigmoid()
         )
@@ -68,11 +68,11 @@ class myNet(nn.Module):
             nn.Linear(1024 , 1024),
             nn.Dropout(dropout_feature),
             nn.BatchNorm1d(1024),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(1024, 512),
             nn.Dropout(dropout_feature),
             nn.BatchNorm1d(512),
-            nn.ReLU(True)
+            nn.ReLU()
         )
         self.decoder=decoder(grid_dims, Folding1_dims,
                  Folding2_dims, Weight1_dims, Weight3_dims)
@@ -80,11 +80,11 @@ class myNet(nn.Module):
             nn.Linear(512, 1024),
             nn.Dropout(dropout),
             #nn.BatchNorm1d(1024),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(1024, 1024),
             nn.Dropout(dropout),
             #nn.BatchNorm1d(1024),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(1024, 256 * 3)
         )
 

@@ -9,34 +9,44 @@ class conv_bn_relu(nn.Module):  # con->bn->relu
         self.conv=nn.Sequential(
             nn.Conv2d(ch_in,ch_out,kernel_size=kernel_size,stride=stride,padding=padding), # inputchannel,out_channel,padding=1 才能让输出和输入大小不变
             nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
 
     def forward(self,x):
         x=self.conv(x)
         return x
+class conv_bn(nn.Module):  # con->bn
+    def __init__(self,ch_in,ch_out,kernel_size=3,stride=1,padding=1): # padding=1可以使得输入和输出大小一样，ｐａｄｄｉｎｇ＝２大小减半
+        super(conv_bn_relu,self).__init__()
+        self.conv=nn.Sequential(
+            nn.Conv2d(ch_in,ch_out,kernel_size=kernel_size,stride=stride,padding=padding), # inputchannel,out_channel,padding=1 才能让输出和输入大小不变
+            nn.BatchNorm2d(ch_out)
+        )
 
+    def forward(self,x):
+        x=self.conv(x)
+        return x
 class attention_block(nn.Module): # attention_block
     def __init__(self,ch_in,r=16,i=2):
         super(attention_block,self).__init__()
         self.channel_attention=nn.Sequential(
             nn.AdaptiveAvgPool2d((1,1)),
             nn.Conv2d(ch_in,ch_in//r,kernel_size=1,stride=1),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Conv2d(ch_in // r, ch_in, kernel_size=1, stride=1),
             nn.Sigmoid()
         )
         self.spatial_attention=nn.Sequential(
             nn.Conv2d(ch_in,ch_in*i,kernel_size=1,stride=1),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Conv2d(ch_in*i, 1, kernel_size=1, stride=1),
             nn.Sigmoid()
         )
         self.last_conv=nn.Sequential(
             nn.Conv2d(ch_in*2,ch_in,kernel_size=1,stride=1),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
-        self.last_relu=nn.ReLU()#inplace=True
+        self.last_relu=nn.ReLU()
 
     def forward(self,x):
         channel_feature=self.channel_attention(x)
@@ -90,13 +100,13 @@ class image_encoder(nn.Module):
         self.fc_resize=nn.Sequential(
             nn.Linear(512*4*4,1024),
             nn.BatchNorm1d(1024),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(1024,1024),
             nn.BatchNorm1d(1024),
-            nn.ReLU(True),
+            nn.ReLU(),
             nn.Linear(1024,512),
             nn.BatchNorm1d(512),
-            nn.ReLU(True)
+            nn.ReLU()
         )
 
 
@@ -139,6 +149,6 @@ class image_encoder(nn.Module):
 if __name__ == '__main__':
     n,c,h,w=64,32,128,128
     x = torch.ones((n,c,h,w))
-    model=image_encoder(32,128,128,attention=1)
+    model=image_encoder(32,128,128,attention=0)
     out=model(x)
     print(out.shape)
