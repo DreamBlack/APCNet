@@ -222,7 +222,7 @@ if __name__ == '__main__':
             net.to(device)
             net.load_state_dict(torch.load(path_Nets[i], map_location=lambda storage, location: storage)['state_dict'],strict=False)
             net.eval()
-            fake_center1, fake_center2, fake = net(input_cropped)
+            fake_center1, fake_center2, fake = net(input_cropped,image)
             missings.append(fake.cuda().data.cpu().squeeze(0).numpy())
 
         print(len(missings))

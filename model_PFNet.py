@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
+from image_encoder_forpf import image_encoder
 
 
 class Convlayer(nn.Module):
@@ -103,7 +104,7 @@ class PointcloudCls(nn.Module):
         return F.log_softmax(x, dim=1)
 
 class _netG(nn.Module):
-    def  __init__(self,num_scales,each_scales_size,point_scales_list,crop_point_num):
+    def  __init__(self,num_scales,each_scales_size,point_scales_list,crop_point_num,dropout_feature=0):
         super(_netG,self).__init__()
         self.crop_point_num = crop_point_num
         self.latentfeature = Latentfeature(num_scales,each_scales_size,point_scales_list)
@@ -114,7 +115,27 @@ class _netG(nn.Module):
         self.fc1_1 = nn.Linear(1024,128*512)
         self.fc2_1 = nn.Linear(512,64*128)#nn.Linear(512,64*256) !
         self.fc3_1 = nn.Linear(256,64*3)
-        
+        self.image_encoder=image_encoder()
+        self.feature_fusion = nn.Sequential(
+            nn.Linear(1920*2, 2048),
+            nn.Dropout(dropout_feature),
+            nn.BatchNorm1d(2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1920),
+            nn.Dropout(dropout_feature),
+            nn.BatchNorm1d(1920),
+            nn.ReLU()
+        )
+        self.get_sig_weight = nn.Sequential(
+            nn.Linear(1920 * 2, 1024),
+            nn.BatchNorm1d(1024),
+            nn.ReLU(),
+            nn.Linear(1024, 256),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Linear(256, 2),
+            nn.Sigmoid()
+        )
 #        self.bn1 = nn.BatchNorm1d(1024)
 #        self.bn2 = nn.BatchNorm1d(512)
 #        self.bn3 = nn.BatchNorm1d(256)#nn.BatchNorm1d(64*256) !
@@ -129,9 +150,20 @@ class _netG(nn.Module):
 #        self.bn1_ = nn.BatchNorm1d(512)
 #        self.bn2_ = nn.BatchNorm1d(256)
         
-    def forward(self,x):
-        x = self.latentfeature(x)
-        x_1 = F.relu(self.fc1(x)) #1024
+    def forward(self,x,image):
+        x = self.latentfeature(x) #B*1920
+        x = x.view(x.size(0), 1, -1)  # N*1*1920
+        image_feature = self.image_encoder.forward(image)  # B*1*1920
+
+        cat_feature = torch.cat((image_feature, x), 1)  # b*2*(1920)
+
+        fc_cat_feature = cat_feature.view(cat_feature.size(0), 1920*2)
+        sig_weight = self.get_sig_weight(fc_cat_feature)
+        sig_weight = sig_weight.unsqueeze(2)
+        cat_feature = torch.mul(sig_weight, cat_feature)
+        fusion_feature = cat_feature.view(cat_feature.size(0), 1920*2)
+        fusion_feature = self.feature_fusion(fusion_feature)
+        x_1 = F.relu(self.fc1(fusion_feature)) #1024
         x_2 = F.relu(self.fc2(x_1)) #512
         x_3 = F.relu(self.fc3(x_2))  #256
         
@@ -201,10 +233,12 @@ class _netlocalD(nn.Module):
         return x
 
 if __name__=='__main__':
-    input1 = torch.randn(64,2048,3)
+    input1 = torch.randn(64,1024,3)
     input2 = torch.randn(64,512,3)
     input3 = torch.randn(64,256,3)
     input_ = [input1,input2,input3]
-    netG=_netG(3,1,[2048,512,256],1024)
-    output = netG(input_)
-    print(output)
+    n, c, h, w = 64, 3, 128, 128
+    x = torch.ones((n, c, h, w))
+    netG=_netG(3,1,[1024,512,256],256)
+    output = netG(input_,x)
+    print(output[2].shape)

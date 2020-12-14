@@ -56,18 +56,19 @@ test_dset = MyDataset(classification=True,three=opt.folding_decoder,
                       class_choice=opt.class_choice, split='test',four_data=opt.four_data)
 assert test_dset
 test_dataloader = torch.utils.data.DataLoader(test_dset, batch_size=opt.batchSize,
-                                              shuffle=False, num_workers=opt.workers)
+                                              shuffle=False, num_workers=opt.workers,drop_last=True)
 
 length = len(test_dataloader)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
 FC_dimsG = (1024, 1024, 512)
-if opt.class_choice == 'Car':
-    MLP_dimsG = (3, 64, 64, 64, 128, 512)
-    FC_dimsG = (512, 512, 512)
-MLP_dimsD = (3, 64, 64, 64, 128, 1024)
-FC_dimsD = (1024, 1024, 512)
+
+if opt.class_choice=='Lamp' or  opt.class_choice=='Car' :
+    if opt.pointnetplus_encoder==0 and opt.folding_decoder==0:# 第四章，在所有car lamp数据集上的folding实验point都用小的
+        MLP_dimsG = (3, 64, 64, 64, 128, 512)
+        FC_dimsG = (512, 512, 512)
+
 grid_dims = (16, 16)  # defaul 45
 Folding1_dims = (514, 512, 512, 3)  # for foldingnet
 Folding2_dims = (515, 512, 512, 3)  # for foldingnet

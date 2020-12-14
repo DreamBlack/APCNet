@@ -35,6 +35,7 @@ parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=1, help='0 not use D-net,1 use D-net')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
+parser.add_argument('--expdir', default='', help="path to netD (to continue training)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 parser.add_argument('--drop',type=float,default=0.2)
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
@@ -99,7 +100,7 @@ transforms = transforms.Compose(
 )
 dset = MyDataset(classification=True,class_choice=opt.class_choice, split='train',four_data=1)
 assert dset
-dataloader = torch.utils.data.DataLoader(dset, batch_size=opt.batchSize,shuffle=True,num_workers = opt.workers)
+dataloader = torch.utils.data.DataLoader(dset, batch_size=opt.batchSize,shuffle=True,num_workers = opt.workers,drop_last=True)
 
 #dset = ModelNet40Loader.ModelNet40Cls(opt.pnum, train=True, transforms=transforms, download = False)
 #assert dset
@@ -112,8 +113,7 @@ dataloader = torch.utils.data.DataLoader(dset, batch_size=opt.batchSize,shuffle=
 #                                         shuffle=True,num_workers = int(opt.workers))
 
 #pointcls_net.apply(weights_init)
-print(point_netG)
-print(point_netD)
+
 
 criterion = torch.nn.BCEWithLogitsLoss().to(device)
 criterion_PointLoss = PointLoss().to(device)
@@ -160,6 +160,8 @@ if opt.D_choose == 1:
             image = image.to(device)
 
             incomplete = Variable(incomplete, requires_grad=True).cuda()
+            image = Variable(image.float(), requires_grad=True).cuda()
+            image = torch.squeeze(image, 1)
             label.resize_([batch_size, 1]).fill_(real_label)
             label = label.to(device)
 
@@ -197,7 +199,7 @@ if opt.D_choose == 1:
             output = point_netD(real_center)
             errD_real = criterion(output,label)
             errD_real.backward()
-            fake_center1,fake_center2,fake  =point_netG(input_cropped)
+            fake_center1,fake_center2,fake  =point_netG(input_cropped,image)
             fake = torch.unsqueeze(fake,1)
             label.data.fill_(fake_label)
             output = point_netD(fake.detach())
@@ -222,7 +224,7 @@ if opt.D_choose == 1:
             errG = (1-opt.wtl2) * errG_D + opt.wtl2 * errG_l2
             errG.backward()
             optimizerG.step()
-            writer = SummaryWriter(log_dir=os.path.join(expdir,'tensorboard'))
+            writer = SummaryWriter(log_dir=os.path.join(opt.expdir,'tensorboard'))
             writer.add_scalar('cd_missing', CD_LOSS, num_batch * epoch + i)
             writer.add_scalar('D_Loss', errD.data, num_batch * epoch + i)
             writer.add_scalar('GD_Loss', errG_D.data, num_batch * epoch + i)
@@ -246,10 +248,10 @@ if opt.D_choose == 1:
         if epoch % 10 == 0:
             torch.save({'epoch': epoch + 1,
                         'state_dict': point_netG.state_dict()},
-                       expdir + '/checkpoint/point_netG' + str(epoch) + '.pth')
+                       opt.expdir + '/checkpoint/point_netG' + str(epoch) + '.pth')
             torch.save({'epoch': epoch + 1,
                         'state_dict': point_netD.state_dict()},
-                       expdir + '/checkpoint/point_netD' + str(epoch) + '.pth')
+                       opt.expdir + '/checkpoint/point_netD' + str(epoch) + '.pth')
             
             
 

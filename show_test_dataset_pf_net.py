@@ -58,7 +58,7 @@ test_dset = MyDataset(classification=True,three=opt.folding_decoder,
                       class_choice=opt.class_choice, split='test',four_data=opt.four_data)
 assert test_dset
 test_dataloader = torch.utils.data.DataLoader(test_dset, batch_size=opt.batchSize,
-                                              shuffle=False, num_workers=opt.workers)
+                                              shuffle=False, num_workers=opt.workers,drop_last=True)
 
 length = len(test_dataloader)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -120,7 +120,7 @@ for i, data in enumerate(test_dataloader, 0):
     input_cropped3 = input_cropped3.to(device)
     input_cropped = [input_cropped1, input_cropped2, input_cropped3]
 
-    fake_center1, fake_center2, fake = mynet(input_cropped)
+    fake_center1, fake_center2, fake = mynet(input_cropped,image)
 
     dist_all, dist1, dist2 = criterion_PointLoss(torch.squeeze(fake, 1).to(device), torch.squeeze(gt, 1).to(device))
 
