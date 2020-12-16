@@ -11,15 +11,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()  # create an argumentparser object
-parser.add_argument('--manualSeed', type=int,default=1, help='manual seed')
-parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
-parser.add_argument('--class_choice', default='Car', help="which class choose to train")
+parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
+parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
+parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
 parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
-parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
+parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
+parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
 parser.add_argument('--netG', help="path to netG (to load as model)")
-parser.add_argument('--index', type=int,default=400, help='which obj to show')
+parser.add_argument('--result_path', help="path to netG (to load as model)")
+parser.add_argument('--manualSeed', type=int, help='manual seed')
+parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 opt = parser.parse_args()
 print(opt)
 
@@ -54,9 +57,9 @@ print("Random Seed: ", opt.manualSeed)
 random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 torch.cuda.manual_seed_all(opt.manualSeed)
-incompleteColor='lightgray'
+incompleteColor='gray'
 recColor='royalblue'
-pointSize=50
+pointSize=60
 def draw_point_cloud(incomplete,rec_missing, elev=0,azim=0,output_filename=None):
     """ points is a Nx3 numpy array """
     fig = plt.figure(figsize=(24, 12), facecolor='w')  #
@@ -94,12 +97,12 @@ def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev=0,azim=0,output_f
     ax1.set_axis_off()
     plt.title("Vanilla")
 
-    #plt.show()
-    for angle in range(0, 360):
-        ax0.view_init(30, angle)
-        ax1.view_init(30, angle)
-        plt.draw()
-        plt.pause(.001)
+    plt.show()
+    # for angle in range(0, 360):
+    #     ax0.view_init(30, angle)
+    #     ax1.view_init(30, angle)
+    #     plt.draw()
+    #     plt.pause(.001)
     # savefig(output_filename)
 def pyplot_for_one_object(image,incomplete,missings, elev=0,azim=0,output_filename=None):
     '''
@@ -206,9 +209,10 @@ if __name__ == '__main__':
         # 构建incomplete和missings数组
         # pyplot_for_one_object(my_image,incomplete.cuda().data.squeeze(0).cpu().numpy(),missings)
     else:
-        dir_path = '/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/03636649'
-        filename1 = '/gt1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
-        filename2 = '/incomplete1a9c1cbf1ca9ca24274623f5a5d0bcdc.pts'
+        # dir_path = '/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/03636649'
+        dir_path='/home/dream/study/codes/PCCompletion/datasets/dataFromPFNet/shapenet_part/shapenet_part/datagenerateForFour/04379243'
+        filename1 = '/gt4ceba450382724f7861fea89ab9e083a.pts'
+        filename2 = '/incomplete4ceba450382724f7861fea89ab9e083a.pts'
         # complete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4incomplete1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
         # incomplete = np.loadtxt("/home/dream/study/codes/PCCompletion/新建文件夹chair/test/4gt1b81441b7e597235d61420a53a0cb96d.pts").astype(np.float32)
         # incompletechair=np.loadtxt("/home/dream/study/0incomplete1a00aa6b75362cc5b324368d54a7416f.pts")

@@ -14,7 +14,7 @@ from utils import distance_squre
 import data_utils as d_utils
 from pf_net_three import _netlocalD, _netG
 from tensorboardX import SummaryWriter
-from MyDataset_former import MyDataset
+from pf_three_dataset import MyDataset
 
 parser = argparse.ArgumentParser()
 expdir = '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/four/pf-net/Lamp'

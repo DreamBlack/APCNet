@@ -18,16 +18,19 @@ import os
 会将测试集中结果最好的30个写进去
 '''
 parser = argparse.ArgumentParser()  # create an argumentparser object
+parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
 parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
-parser.add_argument('--class_choice', default='Car', help="which class choose to train")
-parser.add_argument('--folding_decoder', type = bool, default = True, help='enables cuda')
-parser.add_argument('--attention_encoder', type = bool, default = True, help='enables cuda')
+parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
+parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
+parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
 parser.add_argument('--netG', help="path to netG (to load as model)")
 parser.add_argument('--result_path', help="path to netG (to load as model)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
+parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 opt = parser.parse_args()
 print(opt)
 
@@ -42,9 +45,15 @@ Folding1_dims = (514, 512, 512, 3)  # for foldingnet
 Folding2_dims = (515, 512, 512, 3)  # for foldingnet
 Weight1_dims = (16 * 16 + 512, 512, 512, 128)  # for weight matrix estimation 45x45+512 = 2537
 Weight3_dims = (512 + 128, 1024, 1024, 256)
+
+if opt.class_choice=='Lamp' or  opt.class_choice=='Car' :
+    if opt.pointnetplus_encoder==0 and opt.folding_decoder==0:# 第四章，在所有car lamp数据集上的folding实验point都用小的
+        MLP_dimsG = (3, 64, 64, 64, 128, 512)
+        FC_dimsG = (512, 512, 512)
+
 knn = 48
 sigma = 0.008
-mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder)
+mynet = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims, Weight3_dims,folding=opt.folding_decoder,attention=opt.attention_encoder,pointnetplus=opt.pointnetplus_encoder)
 mynet = torch.nn.DataParallel(mynet)
 mynet.to(device)
 mynet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'])
@@ -57,7 +66,14 @@ random.seed(opt.manualSeed)
 torch.manual_seed(opt.manualSeed)
 torch.cuda.manual_seed_all(opt.manualSeed)
 
-test_dset = MyDataset( classification=True, three=opt.folding_decoder,class_choice=opt.class_choice, split='test')
+test_dset = MyDataset(classification=True,three=opt.folding_decoder,
+                      class_choice=opt.class_choice, split='test',four_data=opt.four_data)
+assert test_dset
+test_dataloader = torch.utils.data.DataLoader(test_dset, batch_size=opt.batchSize,
+                                              shuffle=False, num_workers=opt.workers,drop_last=True)
+
+
+
 criterion_PointLoss = PointLoss_test().to(device)
 #画出3d点云
 def pyplot_draw_point_cloud(image,incomplete,rec_missing, elev,azim,output_filename=None):
