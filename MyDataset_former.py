@@ -25,6 +25,7 @@ class MyDataset(data.Dataset):
         self.classification = classification
         self.image_path=dsimage_path
         self.help_path=help_path
+        self.split=split
 
         with open(self.catfile, 'r') as f:
             for line in f:
@@ -148,6 +149,7 @@ class MyDataset(data.Dataset):
             image = cv2.imread(fn[3])[4:-5, 4:-5, :3]
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+
             foldername = fn[4]
             filename = fn[5]
 
@@ -164,10 +166,18 @@ class MyDataset(data.Dataset):
         incomplete = torch.from_numpy(incomplete)
         gt = torch.from_numpy(gt)
         image = torch.from_numpy(np.transpose(image, (2, 0, 1)))
-        if self.classification:
-            return incomplete, gt, image, filename
+        if self.split=='test':
+            view_id=os.path.basename(fn[3])[0:2]
+            center_id=os.path.basename(fn[2])[0]
+            if self.classification:
+                return incomplete, gt, image, filename,view_id,center_id
+            else:
+                return incomplete, gt, image, filename,view_id,center_id
         else:
-            return incomplete, gt, image, filename
+            if self.classification:
+                return incomplete, gt, image, filename
+            else:
+                return incomplete, gt, image, filename
 
     def __len__(self):
         return len(self.datapath)
