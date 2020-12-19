@@ -11,6 +11,7 @@ import torch.utils.data
 from torch.autograd import Variable
 from MyDataset_former import MyDataset
 from completion_net import myNet
+from pf_net_three import _netG as vanilianet
 from myutils import PointLoss_test
 import numpy as np
 
@@ -18,33 +19,23 @@ np.set_printoptions(suppress=True)
 parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
 parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
-parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
-parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
-parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
-parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
+parser.add_argument('--class_choice', default='Car', help="which class choose to train")
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=2, help='number of GPUs to use')
-parser.add_argument('--netG', help="path to netG (to load as model)")
-parser.add_argument('--result_path', help="path to netG (to load as model)")
 parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
+parser.add_argument('--vanilia', type=int,default=1, help='manual seed')
 opt = parser.parse_args()
 print(opt)
 
-print('命令行参数写入文件')
-f_all=open(os.path.join(opt.result_path,'all_test_result.txt'), 'a')
-f_all.write("\n"+"workers"+"  "+str(opt.workers))
-f_all.write("\n"+"batchSize"+"  "+str(opt.batchSize))
-f_all.write("\n"+"attention_encoder"+"  "+str(opt.attention_encoder))
-f_all.write("\n"+"folding_decoder"+"  "+str(opt.folding_decoder))
-f_all.write("\n"+"pointnetplus_encoder"+"  "+str(opt.pointnetplus_encoder))
-f_all.write("\n"+"class_choice"+"  "+str(opt.class_choice))
-f_all.write("\n"+"netG"+"  "+str(opt.netG))
-f_all.write("\n"+"four_data"+"  "+str(opt.four_data))
-f_all.close()
+catname_lower={'Car':"car",'Lamp':"lamp",'Chair':"chair","Table":'table',"Airplane":'airplane'}
+if opt.vanilia==1:
+    va_or_image='vanilia'
+else:
+    va_or_image='with_image'
+netG_path=os.path.join("/home/dream/study/codes/PCCompletion/best_four_exp/pfnet/",va_or_image,catname_lower[opt.class_choice],"checkpoint","point_netG130.pth")
 
-continueLast = False
-resume_epoch = 0
+print("netg_path: %s"%netG_path)
+
 weight_decay = 0.001
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -54,8 +45,8 @@ USE_CUDA = opt.cuda
 def distance_squre1(p1, p2):
     return (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2
 
-test_dset = MyDataset(classification=True,three=opt.folding_decoder,
-                      class_choice=opt.class_choice, split='test',four_data=opt.four_data)
+test_dset = MyDataset(classification=True,three=0,
+                      class_choice=opt.class_choice, split='test',four_data=1)
 assert test_dset
 test_dataloader = torch.utils.data.DataLoader(test_dset, batch_size=opt.batchSize,
                                               shuffle=False, num_workers=opt.workers,drop_last=True)
@@ -63,11 +54,15 @@ test_dataloader = torch.utils.data.DataLoader(test_dset, batch_size=opt.batchSiz
 length = len(test_dataloader)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+if opt.vanilia==1:
+    mynet = vanilianet(3, 1, [1024, 512, 256], 256)
+else:
+    mynet = _netG(3, 1, [1024, 512, 256], 256)
 
-mynet = _netG(3, 1, [1024, 512, 256], 256)
 mynet.to(device)
-mynet.load_state_dict(torch.load(opt.netG, map_location=lambda storage, location: storage)['state_dict'],strict=False)
+mynet.load_state_dict(torch.load(netG_path, map_location=lambda storage, location: storage)['state_dict'],strict=False)
 mynet.eval()
+
 
 criterion_PointLoss = PointLoss_test().to(device)
 
@@ -81,7 +76,7 @@ Gt_Pre = 0
 Pre_Gt = 0
 
 for i, data in enumerate(test_dataloader, 0):
-    incomplete, gt, image,filename = data
+    incomplete, gt, image,filename,a,b = data
     batch_size = incomplete.size()[0]
     incomplete = incomplete.to(device)
 
@@ -120,7 +115,11 @@ for i, data in enumerate(test_dataloader, 0):
     input_cropped3 = input_cropped3.to(device)
     input_cropped = [input_cropped1, input_cropped2, input_cropped3]
 
-    fake_center1, fake_center2, fake = mynet(input_cropped,image)
+
+    if opt.vanilia == 1:
+        fake_center1, fake_center2, fake = mynet(input_cropped)
+    else:
+        fake_center1, fake_center2, fake = mynet(input_cropped, image)
 
     dist_all, dist1, dist2 = criterion_PointLoss(torch.squeeze(fake, 1).to(device), torch.squeeze(gt, 1).to(device))
 
@@ -157,7 +156,9 @@ print(length)
 
 # 写入文件
 print('将总值结果写入文件')
-f_all=open(os.path.join(opt.result_path,'all_test_result.txt'), 'a')
+result_path='/home/dream/study/codes/PCCompletion/best_four_exp/pfnet/'
+result_path=os.path.join(result_path,va_or_image,opt.class_choice+'_all_test_result.txt')
+f_all=open(result_path, 'a')
 f_all.write('\n'+'CD: %.4f Gt_Pre: %.4f Pre_Gt: %.4f '
                   % (float(CD*1000), float(Gt_Pre*1000), float(Pre_Gt*1000)))
 f_all.write('\n'+'CD_ALL: %.4f Gt_Pre_ALL: %.4f Pre_Gt_ALL: %.4f '
