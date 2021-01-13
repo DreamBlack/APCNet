@@ -38,7 +38,7 @@ class decoder(nn.Module):
         maxk_element[: , 0] = 0
         weight_mat_sumrow = torch.unsqueeze(torch.sum(maxk_element , 1) , 1).expand(-1 , knn)
         weight_normalize = maxk_element/weight_mat_sumrow # normalize or not
-        weight_initial = torch.zeros(256 , 256)  #  torch.zeros(2025 , 2025)
+        weight_initial = torch.zeros(grid_dims[0]*grid_dims[0] , grid_dims[0]*grid_dims[0])  #  torch.zeros(2025 , 2025)
         weight_normalize = weight_initial.scatter(1 , maxk_index , weight_normalize)
         # check the max and min values of the weight matrix
         # print("max value of weight matrix:" , torch.max(weight_normalize))
