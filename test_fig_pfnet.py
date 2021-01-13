@@ -13,17 +13,18 @@ from MyDataset_former import MyDataset
 from model_PFNet import _netG
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
 parser = argparse.ArgumentParser()  # create an argumentparser object
 parser.add_argument('--manualSeed', type=int,default=1, help='manual seed')
 parser.add_argument('--cuda', type = bool, default = True, help='enables cuda')
-parser.add_argument('--class_choice', default='Car', help="which class choose to train")
+parser.add_argument('--class_choice', default='Airplane', help="which class choose to train")
 parser.add_argument('--attention_encoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--folding_decoder', type = int, default = 1, help='enables cuda')
 parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='enables cuda')
 parser.add_argument('--netG', help="path to netG (to load as model)")
-parser.add_argument('--index', type=int,default=400, help='which obj to show')
+parser.add_argument('--index', type=int,default=0, help='which obj to show')
+parser.add_argument('--vanilia', type=int,default=1, help='which obj to show')
 opt = parser.parse_args()
 print(opt)
 
@@ -33,7 +34,13 @@ print(opt)
 #            '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/withDCkPath/WITHDAR/Trained_Model/point_netG130.pth']
 #path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/fc_decoder_withG_exp/checkpoint/Trained_Model/point_netG100.pth'
 path='/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/folding_rep_attention/02958343/checkpoint/point_netG150.pth'
-path_Nets=[opt.netG]
+catname_lower={'Car':"car",'Lamp':"lamp",'Chair':"chair","Table":'table',"Airplane":'airplane'}
+if opt.vanilia==1:
+    va_or_image='vanilia'
+else:
+    va_or_image='with_image'
+netG_path=os.path.join("/home/dream/study/codes/PCCompletion/best_four_exp/pfnet/",va_or_image,catname_lower[opt.class_choice],"checkpoint","point_netG130.pth")
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True # promote
 MLP_dimsG = (3, 64, 64, 64, 128, 1024)
