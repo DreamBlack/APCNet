@@ -15,7 +15,7 @@ import data_utils as d_utils
 from pf_net_three import _netlocalD, _netG
 from tensorboardX import SummaryWriter
 from pix3d.pix3d_dataset import Pix3DSingleDataset
-#python finetune_pf_three.py --expdir=/home/dream/study/codes/PCCompletion/best_three_exp/pfnet/table --class_choice=Table
+#python finetune_pf_three.py --expdir=/home/dream/study/codes/PCCompletion/best_three_exp/pfnet/pix3d/table --class_choice=Table --netG=/home/dream/study/codes/PCCompletion/best_three_exp/pfnet/pix3d/table/checkpoint/point_netGshapenet.pth --netD=/home/dream/study/codes/PCCompletion/best_three_exp/pfnet/pix3d/table/checkpoint/point_netDshapenet.pth --D_choose=1
 
 parser = argparse.ArgumentParser()
 expdir = '/home/dream/study/codes/PCCompletion/PFNet/PF-Net-Point-Fractal-Network/exp/four/pf-net/Lamp'

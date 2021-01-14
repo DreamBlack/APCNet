@@ -15,10 +15,10 @@ from my_discriminator import myDiscriminator
 from pix3d.pix3d_dataset import Pix3DSingleDataset
 import time
 import os
-
+#python finetune_my_three.py --tensorboard=/home/dream/study/codes/PCCompletion/best_three_exp/pix3d/table/tensorboard --checkpoint=/home/dream/study/codes/PCCompletion/best_three_exp/pix3d/table/checkpoint --class_choice=Table --netG=/home/dream/study/codes/PCCompletion/best_three_exp/pix3d/table/checkpoint/point_netGshapenet.pth --Rep_choose=1 --alpha=0.3
 parser = argparse.ArgumentParser()  # create an argumentparser object
-parser.add_argument('--workers', type=int,default=2, help='number of data loading workers')
-parser.add_argument('--batchSize', type=int, default=24, help='input batch size')
+parser.add_argument('--workers', type=int,default=16, help='number of data loading workers')
+parser.add_argument('--batchSize', type=int, default=16, help='input batch size')
 parser.add_argument('--class_choice', default='Lamp', help="which class choose to train")
 parser.add_argument('--niter', type=int, default=201, help='number of epochs to train for')
 parser.add_argument('--weight_decay', type=float, default=0.001)
@@ -31,7 +31,7 @@ parser.add_argument('--pointnetplus_encoder', type = int, default = 0, help='ena
 parser.add_argument('--four_data', type = int, default = 0, help='enables cuda')
 parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
 parser.add_argument('--D_choose',type=int, default=0, help='0 not use D-net,1 use D-net')
-parser.add_argument('--Rep_choose',type=int, default=0, help='0 not use Rep Loss,1 use Rep Loss')
+parser.add_argument('--Rep_choose',type=int, default=1, help='0 not use Rep Loss,1 use Rep Loss')
 parser.add_argument('--loss_emd',type=int, default=0, help='0 use cd Loss,1 use emd Loss')
 parser.add_argument('--netG', default='', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
@@ -40,7 +40,7 @@ parser.add_argument('--tensorboardDir', default='', help="path to netD (to conti
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 parser.add_argument('--drop',type=float,default=0, help='use when charpter 4 in fc decoder')
 parser.add_argument('--dropout_feature',type=float,default=0, help='use when charpter 4 folding decoder')
-parser.add_argument('--alpha',type=float,default=0.5, help='rep loss weight')
+parser.add_argument('--alpha',type=float,default=0.3, help='rep loss weight')
 parser.add_argument('--radius',type=float,default=0.07, help='radius of rep loss')
 parser.add_argument('--num_scales',type=int,default=3,help='number of scales')
 parser.add_argument('--step_size',type=int,default=40,help='LR step size')
