@@ -8,7 +8,7 @@ import json
 from DatasetGeneration import  dividePointCloud
 import matplotlib
 data_dir_imgs = '/home/dream/study/codes/PCCompletion/datasets/pix3d/pix3d'
-data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/four'
+data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/four/chair'
 HEIGHT = 128
 WIDTH = 128
 PAD = 35
@@ -44,13 +44,27 @@ def generateFour(class_choice):
     models = get_pix3d_models(catname_lower[class_choice])
     cnt=0
     for ind in range(len(models)):
-        model_path, file = os.path.split(os.path.join(data_dir_imgs, models[ind]['model']))
-
+        last_model_path, file = os.path.split(os.path.join(data_dir_imgs, models[ind]['model']))
+        model_path = os.path.splitext(os.path.join(data_dir_imgs, models[ind]['model']))[0]
         _dict = models[ind]
         img_path = os.path.join(data_dir_imgs, _dict['img'])
         mask_path = os.path.join(data_dir_imgs, _dict['mask'])
         bbox = _dict['bbox']  # [width_from, height_from, width_to, height_to]
-        pcl_path_1K = model_path.split('.')[0] + "/model.pts"  # point cloud path
+
+        pcl_path_1K = model_path + ".pts"  # point cloud path
+        last_model_path = last_model_path.split('.')[0] + "/model.pts"  # point cloud path
+
+        gt_filename = os.path.join(data_out_father, 'pc256', str(ind) + ".pts")
+        incomplete_filename = os.path.join(data_out_father, 'pc1024', str(ind) + ".pts")
+        pc2025_filename = os.path.join(data_out_father, 'pc2025', str(ind) + ".pts")
+        image_filename = os.path.join(data_out_father, 'image_clean', str(ind) + ".png")
+        if os.path.exists(gt_filename) and os.path.exists(incomplete_filename) and os.path.exists(pc2025_filename) and os.path.exists(image_filename) :
+            cnt = cnt + 1
+            if cnt % 100 == 0:
+                print("Succeed generate gt and incomplete for %s [%d/%d]" % (class_choice, cnt, len(models)))
+            continue
+
+
         ip_image = cv2.imread(img_path)
         ip_image = cv2.cvtColor(ip_image, cv2.COLOR_BGR2RGB)
         mask_image = cv2.imread(mask_path) != 0
@@ -159,7 +173,7 @@ class Pix3DSingleDataset(data.Dataset):
 
 import matplotlib.pyplot as plt
 if __name__ == '__main__':
-    generateFour("Table")
+    generateFour("Chair")
     #    d = PartDataset( root='./dataset/shapenetcore_partanno_segmentation_benchmark_v0/',classification=False, class_choice=None, npoints=4096, split='test')
     # print(len(dset))
     # incomplete,gt, image, filename= dset[1000]

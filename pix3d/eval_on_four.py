@@ -46,7 +46,7 @@ elev = 37  # a=elev
 azim = 27 # b=azim
 # good airplane
 catname_lower={'Car':"car",'Lamp':"lamp",'Chair':"chair","Table":'table',"Airplane":'airplane'}
-my_net_path_home='/home/dream/study/codes/PCCompletion/best_four_exp'
+my_net_path_home='/home/dream/study/codes/PCCompletion/best_four_exp/pix3d'
 my_net_path=os.path.join(my_net_path_home,catname_lower[opt.class_choice],"checkpoint","point_netG150.pth")
 my_net_path2=os.path.join(my_net_path_home,catname_lower[opt.class_choice],"checkpoint","with_rep_point_netG150.pth")
 if not os.path.exists(my_net_path):
@@ -383,7 +383,7 @@ def draw_point_cloud(incomplete,rec_missing, elev=0,azim=0,output_filename=None)
     plt.show()
 
 test_dset = Pix3DMultiDataset(
-                 class_choice='table')
+                 class_choice=opt.class_choice)
 assert test_dset
 # good:10749,2269,5320
 # bad:9958,9960,4305

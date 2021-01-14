@@ -74,22 +74,23 @@ class Pix3DMultiDataset(data.Dataset):
         ind=index
         model_path, file = os.path.split(os.path.join(data_dir_imgs, self.models[ind]['model']))
 
-        pcl_2025 = np.loadtxt(os.path.join(data_out_father,'pc2025',str(ind)+'.pts')).astype(np.float32)
+        pcl_2025 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat],'pc2025',str(ind)+'.pts')).astype(np.float32)
         pcl_2025=torch.from_numpy(pcl_2025)
 
-        pcl_256 = np.loadtxt(os.path.join(data_out_father, 'pc256', str(ind) + '.pts')).astype(np.float32)
+        pcl_256 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat], 'pc256', str(ind) + '.pts')).astype(np.float32)
         pcl_256 = torch.from_numpy(pcl_256)
 
-        pcl_1024 = np.loadtxt(os.path.join(data_out_father, 'pc1024', str(ind) + '.pts')).astype(np.float32)
+        pcl_1024 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat], 'pc1024', str(ind) + '.pts')).astype(np.float32)
         pcl_1024 = torch.from_numpy(pcl_1024)
 
-        ip_image = cv2.imread(os.path.join(data_out_father, 'img_clean', str(ind) + '.png'))
+        image_path=os.path.join(data_out_father,catname_lower[self.cat], 'image_clean', str(ind) + '.png')
+        ip_image = cv2.imread(image_path)
         ip_image = cv2.cvtColor(ip_image, cv2.COLOR_BGR2RGB)
 
         incomplete = pcl_1024
         gt = pcl_256
         image = torch.from_numpy(np.transpose(ip_image, (2, 0, 1)))
-        return incomplete, gt, image,pcl_2025,model_path
+        return incomplete, gt, image,pcl_2025,image_path
 
 
     def __len__(self):
