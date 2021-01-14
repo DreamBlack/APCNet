@@ -8,12 +8,13 @@ import json
 from DatasetGeneration import  dividePointCloud
 import matplotlib
 data_dir_imgs = '/home/dream/study/codes/PCCompletion/datasets/pix3d/pix3d'
-data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/four/chair'
+data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/three/chair'
 HEIGHT = 128
 WIDTH = 128
 PAD = 35
 choice = [torch.Tensor([1, 0, 0]), torch.Tensor([0, 0, 1]), torch.Tensor([1, 0, 1]), torch.Tensor([-1, 0, 0]),
                   torch.Tensor([-1, 1, 0])]
+
 def get_pix3d_models(cat):
     with open(os.path.join(data_dir_imgs, 'pix3d.json'), 'r') as f:
         models_dict = json.load(f)
@@ -119,23 +120,23 @@ def generateFour(class_choice):
         if cnt % 100 == 0:
             print("Succeed generate gt and incomplete for %s [%d/%d]" % (class_choice, cnt, len(models)))
 
+def generateThree(class_choice):
+    models = get_pix3d_models(catname_lower[class_choice])
+    cnt = 0
+    for ind in range(len(models)):
 
-class Pix3DSingleDataset(data.Dataset):
-    def __init__(self,  class_choice=None):
-        self.cat = class_choice
-        models = get_pix3d_models(catname_lower[self.cat])
-        self.models=models
-
-    def __getitem__(self, index):
-        ind=int(index/5)
-        center=index%5
-        model_path, file = os.path.split(os.path.join(data_dir_imgs, self.models[ind]['model']))
-
-        _dict = self.models[ind]
+        last_model_path, file = os.path.split(os.path.join(data_dir_imgs, models[ind]['model']))
+        model_path = os.path.splitext(os.path.join(data_dir_imgs, models[ind]['model']))[0]
+        _dict = models[ind]
         img_path = os.path.join(data_dir_imgs, _dict['img'])
         mask_path = os.path.join(data_dir_imgs, _dict['mask'])
         bbox = _dict['bbox']  # [width_from, height_from, width_to, height_to]
-        pcl_path_1K = model_path.split('.')[0] + "/model.pts"  # point cloud path
+
+        pcl_path_1K = model_path + ".pts"  # point cloud path
+
+
+        pc2025_filename = os.path.join(data_out_father, 'pc2025', str(ind) + ".pts")
+        image_filename = os.path.join(data_out_father, 'image_clean', str(ind) + ".png")
         ip_image = cv2.imread(img_path)
         ip_image = cv2.cvtColor(ip_image, cv2.COLOR_BGR2RGB)
         mask_image = cv2.imread(mask_path) != 0
@@ -153,27 +154,33 @@ class Pix3DSingleDataset(data.Dataset):
         left, right = delta_w // 2, delta_w - (delta_w // 2)
         color = [0, 0, 0]
         ip_image = cv2.copyMakeBorder(ip_image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+        matplotlib.image.imsave(image_filename, ip_image)
 
-        xangle = np.pi / 180. * -90
-        yangle = np.pi / 180. * -90
-        #pcl_2025 = rotate(rotate(np.loadtxt(pcl_path_1K).astype(np.float32), xangle, yangle), xangle)
-        pcl_2025=np.loadtxt(pcl_path_1K).astype(np.float32)
-        pcl_2025=torch.from_numpy(pcl_2025)
-        pcl_256, pcl_1024 = dividePointCloud(pcl_2025.float(), choice[center])
+        pcl_2025 = np.loadtxt(pcl_path_1K).astype(np.float32)
+        pcl_2025 = pc_normalize(pcl_2025)
+        pcl_2025 = torch.from_numpy(pcl_2025)
+        np.savetxt(pc2025_filename, pcl_2025.numpy())
+        for center in range(5):
+            gt_filename = os.path.join(data_out_father, 'pc256', str(ind*5+center) + ".pts")
+            incomplete_filename = os.path.join(data_out_father, 'pc1024', str(ind*5+center) + ".pts")
+            pcl_256, pcl_1024 = dividePointCloud(pcl_2025.float(), choice[center])
 
-        # To Pytorch
-        incomplete = pcl_1024
-        gt = pcl_256
-        image = image = torch.from_numpy(np.transpose(ip_image, (2, 0, 1)))
-        return incomplete, gt, image,pcl_2025,img_path
+            np.savetxt(gt_filename, pcl_256.numpy())
+            np.savetxt(incomplete_filename, pcl_1024.numpy())
+            cnt = cnt + 1
+            if cnt % 100 == 0:
+                print("Succeed generate gt and incomplete for %s [%d/%d]" % (class_choice, cnt, 5 * len(models)))
 
 
-    def __len__(self):
-        return len(self.models)*5
+
+
 
 import matplotlib.pyplot as plt
 if __name__ == '__main__':
-    generateFour("Chair")
+    data_out_father = '/home/dream/study/codes/PCCompletion/datasets/my_pix3d/three/table'
+    generateThree("Table")
+    data_out_father = '/home/dream/study/codes/PCCompletion/datasets/my_pix3d/three/chair'
+    generateThree("Chair")
     #    d = PartDataset( root='./dataset/shapenetcore_partanno_segmentation_benchmark_v0/',classification=False, class_choice=None, npoints=4096, split='test')
     # print(len(dset))
     # incomplete,gt, image, filename= dset[1000]

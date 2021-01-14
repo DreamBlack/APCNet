@@ -63,27 +63,28 @@ def pc_normalize(pc):
     pc = pc / m
     return pc
 catname_lower={'Chair':"chair","Table":'table'}
-data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/four'
+data_out_father='/home/dream/study/codes/PCCompletion/datasets/my_pix3d/'
 class Pix3DMultiDataset(data.Dataset):
     def __init__(self,  class_choice=None):
         self.cat = class_choice
         models = get_pix3d_models(catname_lower[self.cat])
         self.models=models
+        self.father_path=os.path.join(data_out_father,"four")
 
     def __getitem__(self, index):
         ind=index
         model_path, file = os.path.split(os.path.join(data_dir_imgs, self.models[ind]['model']))
 
-        pcl_2025 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat],'pc2025',str(ind)+'.pts')).astype(np.float32)
+        pcl_2025 = np.loadtxt(os.path.join(self.father_path,catname_lower[self.cat],'pc2025',str(ind)+'.pts')).astype(np.float32)
         pcl_2025=torch.from_numpy(pcl_2025)
 
-        pcl_256 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat], 'pc256', str(ind) + '.pts')).astype(np.float32)
+        pcl_256 = np.loadtxt(os.path.join(self.father_path,catname_lower[self.cat], 'pc256', str(ind) + '.pts')).astype(np.float32)
         pcl_256 = torch.from_numpy(pcl_256)
 
-        pcl_1024 = np.loadtxt(os.path.join(data_out_father,catname_lower[self.cat], 'pc1024', str(ind) + '.pts')).astype(np.float32)
+        pcl_1024 = np.loadtxt(os.path.join(self.father_path,catname_lower[self.cat], 'pc1024', str(ind) + '.pts')).astype(np.float32)
         pcl_1024 = torch.from_numpy(pcl_1024)
 
-        image_path=os.path.join(data_out_father,catname_lower[self.cat], 'image_clean', str(ind) + '.png')
+        image_path=os.path.join(self.father_path,catname_lower[self.cat], 'image_clean', str(ind) + '.png')
         ip_image = cv2.imread(image_path)
         ip_image = cv2.cvtColor(ip_image, cv2.COLOR_BGR2RGB)
 
@@ -102,46 +103,34 @@ class Pix3DSingleDataset(data.Dataset):
         self.cat = class_choice
         models = get_pix3d_models(catname_lower[self.cat])
         self.models=models
+        self.father_path = os.path.join(data_out_father, "three")
 
     def __getitem__(self, index):
         ind=int(index/5)
         center=index%5
+
         model_path, file = os.path.split(os.path.join(data_dir_imgs, self.models[ind]['model']))
 
-        _dict = self.models[ind]
-        img_path = os.path.join(data_dir_imgs, _dict['img'])
-        mask_path = os.path.join(data_dir_imgs, _dict['mask'])
-        bbox = _dict['bbox']  # [width_from, height_from, width_to, height_to]
-        pcl_path_1K = model_path.split('.')[0] + "/model.pts"  # point cloud path
-        ip_image = cv2.imread(img_path)
+        pcl_2025 = np.loadtxt(
+            os.path.join(self.father_path, catname_lower[self.cat], 'pc2025', str(ind) + '.pts')).astype(np.float32)
+        pcl_2025 = torch.from_numpy(pcl_2025)
+
+        pcl_256 = np.loadtxt(os.path.join(self.father_path, catname_lower[self.cat], 'pc256', str(index) + '.pts')).astype(
+            np.float32)
+        pcl_256 = torch.from_numpy(pcl_256)
+
+        pcl_1024 = np.loadtxt(
+            os.path.join(self.father_path, catname_lower[self.cat], 'pc1024', str(index) + '.pts')).astype(np.float32)
+        pcl_1024 = torch.from_numpy(pcl_1024)
+
+        image_path = os.path.join(self.father_path, catname_lower[self.cat], 'image_clean', str(ind) + '.png')
+        ip_image = cv2.imread(image_path)
         ip_image = cv2.cvtColor(ip_image, cv2.COLOR_BGR2RGB)
-        mask_image = cv2.imread(mask_path) != 0
-        ip_image = ip_image * mask_image
-        ip_image = ip_image[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
 
-        current_size = ip_image.shape[:2]  # current_size is in (height, width) format
-        ratio = float(HEIGHT - PAD) / max(current_size)
-        new_size = tuple([int(x * ratio) for x in current_size])
-        ip_image = cv2.resize(ip_image,
-                              (new_size[1], new_size[0]))  # new_size should be in (width, height) format
-        delta_w = WIDTH - new_size[1]
-        delta_h = HEIGHT - new_size[0]
-        top, bottom = delta_h // 2, delta_h - (delta_h // 2)
-        left, right = delta_w // 2, delta_w - (delta_w // 2)
-        color = [0, 0, 0]
-        ip_image = cv2.copyMakeBorder(ip_image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
-
-        xangle = np.pi / 180. * -90
-        yangle = np.pi / 180. * -90
-        pcl_2025 = rotate(rotate(np.loadtxt(pcl_path_1K).astype(np.float32), xangle, yangle), xangle)
-        pcl_2025=torch.from_numpy(pcl_2025)
-        pcl_256, pcl_1024 = dividePointCloud(pcl_2025.float(), choice[center])
-
-        # To Pytorch
         incomplete = pcl_1024
         gt = pcl_256
-        image = image = torch.from_numpy(np.transpose(ip_image, (2, 0, 1)))
-        return incomplete, gt, image,pcl_2025,img_path
+        image = torch.from_numpy(np.transpose(ip_image, (2, 0, 1)))
+        return incomplete, gt, image, pcl_2025, image_path
 
 
     def __len__(self):
@@ -149,20 +138,19 @@ class Pix3DSingleDataset(data.Dataset):
 
 import matplotlib.pyplot as plt
 if __name__ == '__main__':
-    dset = Pix3DMultiDataset(class_choice='table')
+    dset = Pix3DSingleDataset(class_choice='Table')
     assert dset
-    dataloader = torch.utils.data.DataLoader(dset, batch_size=16, shuffle=False, num_workers=16)
+    #dataloader = torch.utils.data.DataLoader(dset, batch_size=16, shuffle=False, num_workers=16)
     # for epoch in range(0, 10):
     #     for i, data in enumerate(dataloader, 0):
     #         incomplete, gt, image,  cmpgt = data
     #         np.savetxt('cmppc' + '.pts', cmpgt[0], fmt = "%f %f %f")
     #         break
-    incomplete, gt, image,  cmpgt = dset[200]
+    incomplete, gt, image, cmpgt, image_path = dset[0]
 
     print(cmpgt.size())
     print(gt.size())
     print(image.size())
-    plt.imshow(image)
     plt.show()
     np.savetxt('cmppc' + '.pts', cmpgt, fmt="%f %f %f")
     np.savetxt('incomplete' + '.pts', incomplete, fmt="%f %f %f")

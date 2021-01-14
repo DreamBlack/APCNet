@@ -47,7 +47,7 @@ azim = 27 # b=azim
 # good airplane
 catname_lower={'Car':"car",'Lamp':"lamp",'Chair':"chair","Table":'table',"Airplane":'airplane'}
 my_net_path_home='/home/dream/study/codes/PCCompletion/best_four_exp/pix3d'
-my_net_path=os.path.join(my_net_path_home,catname_lower[opt.class_choice],"checkpoint","point_netG150.pth")
+my_net_path=os.path.join(my_net_path_home,catname_lower[opt.class_choice]+"0.3","checkpoint","point_netG150.pth")
 my_net_path2=os.path.join(my_net_path_home,catname_lower[opt.class_choice],"checkpoint","with_rep_point_netG150.pth")
 if not os.path.exists(my_net_path):
     my_net_path = os.path.join(my_net_path_home,catname_lower[opt.class_choice], "checkpoint", "point_netG130.pth")
@@ -183,6 +183,7 @@ def compute_pftime(netpath):
         total_time = total_time + end - start
     print(("pfnet---average time %.4f for cat: %s" % (float(total_time / len(test_dset)), opt.class_choice)))
 def get_result_for_myNet(incomplete,image,netpath):
+    print(netpath)
     net = myNet(3, 128, 128, MLP_dimsG, FC_dimsG, grid_dims, Folding1_dims, Folding2_dims, Weight1_dims,
                 Weight3_dims, folding=opt.folding_decoder, attention=opt.attention_encoder,
                 pointnetplus=opt.pointnetplus_encoder)
